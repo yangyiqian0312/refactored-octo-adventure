@@ -1,0 +1,23 @@
+{
+  "name": "tiktok-shop-live-order-overlay",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Local TikTok Shop live-order alert overlay MVP for OBS.",
+  "packageManager": "pnpm@9.15.0",
+  "scripts": {
+    "dev": "corepack pnpm --filter @live-alerts/shared build && corepack pnpm --filter @live-alerts/server --filter @live-alerts/overlay --parallel dev",
+    "build": "corepack pnpm -r build",
+    "test": "corepack pnpm -r test",
+    "lint": "corepack pnpm -r lint",
+    "typecheck": "corepack pnpm -r typecheck"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.1",
+    "@types/node": "^22.10.2",
+    "eslint": "^9.39.1",
+    "prettier": "^3.6.2",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.46.4"
+  }
+}

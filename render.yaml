@@ -1,0 +1,26 @@
+services:
+  - type: web
+    name: tiktok-shop-live-alert-server
+    runtime: node
+    plan: free
+    buildCommand: corepack pnpm install --frozen-lockfile && corepack pnpm --filter @live-alerts/shared build && corepack pnpm --filter @live-alerts/server build
+    startCommand: corepack pnpm --filter @live-alerts/server start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: OVERLAY_ALLOWED_TOKEN
+        sync: false
+      - key: TIKTOK_APP_KEY
+        sync: false
+      - key: TIKTOK_APP_SECRET
+        sync: false
+      - key: TIKTOK_SHOP_ID
+        sync: false
+      - key: TIKTOK_SHOP_CIPHER
+        sync: false
+      - key: TIKTOK_ACCESS_TOKEN
+        sync: false
+      - key: TIKTOK_WEBHOOK_SECRET
+        sync: false
+      - key: TIKTOK_WEBHOOK_VERIFY_BYPASS
+        value: "false"

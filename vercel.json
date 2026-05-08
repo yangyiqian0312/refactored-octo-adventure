@@ -1,0 +1,16 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "installCommand": "corepack pnpm install --frozen-lockfile",
+  "buildCommand": "corepack pnpm --filter @live-alerts/overlay build",
+  "outputDirectory": "apps/overlay/dist",
+  "rewrites": [
+    {
+      "source": "/overlay",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/overlay/:path*",
+      "destination": "/index.html"
+    }
+  ]
+}
