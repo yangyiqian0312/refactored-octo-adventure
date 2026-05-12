@@ -16,6 +16,7 @@ import {
   buildTikTokDedupeKey,
   extractTikTokEventId,
   extractTikTokOrderId,
+  extractTikTokShopId,
   extractTikTokOrderStatus,
   normalizeTikTokOrderDetailsAlert,
   normalizeTikTokOrderAlert,
@@ -27,6 +28,7 @@ import {
   TikTokShopOrderClient,
   type TikTokOrderClient
 } from "./tiktok/client.js";
+import { exchangeTikTokAuthCode, getTikTokAuthorizedShops } from "./tiktok/auth.js";
 import { tiktokWebhookPayloadSchema } from "./tiktok/types.js";
 import { verifyTikTokWebhookSignature } from "./tiktok/webhookVerifier.js";
 
@@ -119,6 +121,48 @@ export async function createApp(config: AppConfig): Promise<AppContext> {
     alerts: store.getRecentAlerts()
   }));
 
+  app.get("/api/tiktok/oauth/callback", async (request, reply) => {
+    const query = request.query as Record<string, string | undefined>;
+    const code = query.code;
+
+    if (!code || code === "null") {
+      return reply.type("text/html").send(renderOAuthPage({
+        title: "TikTok Shop authorization failed",
+        body: `<p>No authorization code was returned. Error: ${escapeHtml(query.error ?? "unknown")}</p>`
+      }));
+    }
+
+    if (!config.tiktokAppKey || !config.tiktokAppSecret) {
+      return reply.type("text/html").send(renderOAuthPage({
+        title: "TikTok Shop authorization failed",
+        body: "<p>Missing TIKTOK_APP_KEY or TIKTOK_APP_SECRET on the server.</p>"
+      }));
+    }
+
+    try {
+      const options = {
+        authBaseUrl: config.tiktokAuthBaseUrl,
+        apiBaseUrl: config.tiktokApiBaseUrl,
+        apiVersion: config.tiktokApiVersion,
+        appKey: config.tiktokAppKey,
+        appSecret: config.tiktokAppSecret
+      };
+      const token = await exchangeTikTokAuthCode(code, options);
+      const shops = await getTikTokAuthorizedShops(token.accessToken, options);
+
+      return reply.type("text/html").send(renderOAuthSuccessPage(token, shops));
+    } catch (error) {
+      logger.error("tiktok oauth callback failed", {
+        errorName: error instanceof Error ? error.name : "UnknownError"
+      });
+
+      return reply.type("text/html").send(renderOAuthPage({
+        title: "TikTok Shop authorization failed",
+        body: `<p>${escapeHtml(error instanceof Error ? error.message : "Unknown error")}</p>`
+      }));
+    }
+  });
+
   app.get("/api/recent-webhooks", async (request, reply) => {
     if (!isAuthorizedDebugRequest(request.headers.authorization, config.overlayAllowedToken)) {
       return reply.status(401).send({ ok: false });
@@ -131,6 +175,7 @@ export async function createApp(config: AppConfig): Promise<AppContext> {
         dedupeKey: event.dedupeKey,
         receivedAt: event.receivedAt,
         orderId: extractTikTokOrderId(event.payload as Record<string, unknown>),
+        shopId: extractTikTokShopId(event.payload as Record<string, unknown>),
         orderStatus: extractTikTokOrderStatus(event.payload as Record<string, unknown>),
         topLevelKeys: listTopLevelKeys(event.payload)
       }))
@@ -171,6 +216,7 @@ export async function createApp(config: AppConfig): Promise<AppContext> {
     const eventId = extractTikTokEventId(parsed.data);
     const dedupeKey = buildTikTokDedupeKey(parsed.data, eventId);
     const orderId = extractTikTokOrderId(parsed.data);
+    const shopId = extractTikTokShopId(parsed.data);
     const orderStatus = extractTikTokOrderStatus(parsed.data);
 
     if (store.hasDedupeKey(dedupeKey)) {
@@ -178,6 +224,7 @@ export async function createApp(config: AppConfig): Promise<AppContext> {
         eventId,
         dedupeKey,
         orderId,
+        shopId,
         orderStatus
       });
       return { ok: true, duplicate: true };
@@ -196,6 +243,7 @@ export async function createApp(config: AppConfig): Promise<AppContext> {
         payload: parsed.data,
         eventId,
         orderId,
+        shopId,
         orderStatus,
         hasCredentials: config.hasTikTokCredentials,
         tiktokOrderClient,
@@ -274,6 +322,90 @@ function isAuthorizedDebugRequest(authorization: string | undefined, token: stri
   return authorization === `Bearer ${token}`;
 }
 
+function renderOAuthSuccessPage(
+  token: {
+    accessToken: string;
+    accessTokenExpireIn?: number;
+    refreshToken: string;
+    refreshTokenExpireIn?: number;
+    sellerName?: string;
+    sellerBaseRegion?: string;
+    grantedScopes: string[];
+  },
+  shops: Array<{ id: string; cipher: string; name: string; region?: string; sellerType?: string }>
+): string {
+  const primaryShop = shops[0];
+  const envLines = [
+    primaryShop ? `TIKTOK_SHOP_ID=${primaryShop.id}` : "TIKTOK_SHOP_ID=",
+    primaryShop ? `TIKTOK_SHOP_CIPHER=${primaryShop.cipher}` : "TIKTOK_SHOP_CIPHER=",
+    `TIKTOK_ACCESS_TOKEN=${token.accessToken}`,
+    `TIKTOK_REFRESH_TOKEN=${token.refreshToken}`
+  ].join("\n");
+  const shopList = shops.length
+    ? shops
+        .map(
+          (shop) =>
+            `<li><strong>${escapeHtml(shop.name)}</strong><br/><code>TIKTOK_SHOP_ID=${escapeHtml(
+              shop.id
+            )}</code><br/><code>TIKTOK_SHOP_CIPHER=${escapeHtml(shop.cipher)}</code></li>`
+        )
+        .join("")
+    : "<li>No authorized shops returned for this token.</li>";
+
+  return renderOAuthPage({
+    title: "TikTok Shop connected",
+    body: `
+      <p>Update these values in Render Environment Variables, then redeploy the server.</p>
+      <pre>${escapeHtml(envLines)}</pre>
+      <h2>Authorized seller</h2>
+      <p><strong>${escapeHtml(token.sellerName ?? "Unknown seller")}</strong> ${escapeHtml(
+        token.sellerBaseRegion ?? ""
+      )}</p>
+      <h2>Authorized shops</h2>
+      <ul>${shopList}</ul>
+      <h2>Granted scopes</h2>
+      <pre>${escapeHtml(token.grantedScopes.join("\n") || "No scopes returned")}</pre>
+      <p class="warning">Treat access and refresh tokens like passwords. Do not share screenshots of this page publicly.</p>
+    `
+  });
+}
+
+function renderOAuthPage({ title, body }: { title: string; body: string }): string {
+  return `<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>${escapeHtml(title)}</title>
+    <style>
+      body { margin: 0; font-family: system-ui, sans-serif; background: #f7f7f8; color: #111827; }
+      main { max-width: 1040px; margin: 8vh auto; padding: 0 24px; }
+      h1 { font-size: 48px; margin: 0 0 28px; }
+      h2 { margin-top: 28px; }
+      pre { overflow: auto; padding: 24px; border-radius: 8px; background: #111827; color: #e5e7eb; font-size: 15px; line-height: 1.55; }
+      code { color: #0f766e; overflow-wrap: anywhere; }
+      li { margin: 14px 0; }
+      .warning { color: #9f1239; font-weight: 700; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>${escapeHtml(title)}</h1>
+      ${body}
+    </main>
+  </body>
+</html>`;
+}
+
+function escapeHtml(value: string): string {
+  return value
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+}
+
 function createTikTokOrderClient(config: AppConfig): TikTokOrderClient {
   if (
     config.tiktokAppKey &&
@@ -300,6 +432,7 @@ async function processTikTokWebhookEvent({
   payload,
   eventId,
   orderId,
+  shopId,
   orderStatus,
   hasCredentials,
   tiktokOrderClient,
@@ -309,6 +442,7 @@ async function processTikTokWebhookEvent({
   payload: Record<string, unknown>;
   eventId: string;
   orderId: string | undefined;
+  shopId: string | undefined;
   orderStatus: string | undefined;
   hasCredentials: boolean;
   tiktokOrderClient: TikTokOrderClient;
@@ -320,6 +454,7 @@ async function processTikTokWebhookEvent({
       logger.info("tiktok webhook ignored for non-new-order status", {
         eventId,
         orderId,
+        shopId,
         orderStatus
       });
       return;
@@ -328,6 +463,7 @@ async function processTikTokWebhookEvent({
     logger.info("tiktok order detail lookup started", {
       eventId,
       orderId,
+      shopId,
       orderStatus,
       hasCredentials
     });
@@ -341,6 +477,7 @@ async function processTikTokWebhookEvent({
       logger.info("tiktok webhook stored without alert", {
         eventId,
         orderId,
+        shopId,
         orderStatus,
         hasCredentials,
         hasOrderId: Boolean(orderId)
@@ -354,6 +491,7 @@ async function processTikTokWebhookEvent({
       eventId,
       alertId: alert.id,
       orderId,
+      shopId,
       orderStatus,
       source: alert.source,
       quantity: alert.quantity,
@@ -364,6 +502,7 @@ async function processTikTokWebhookEvent({
       logger.error("tiktok order detail lookup failed", {
         eventId,
         orderId,
+        shopId,
         orderStatus,
         errorName: error.name,
         message: error.message,
@@ -377,6 +516,7 @@ async function processTikTokWebhookEvent({
     logger.error("tiktok order detail lookup failed", {
       eventId,
       orderId,
+      shopId,
       orderStatus,
       errorName: error instanceof Error ? error.name : "UnknownError"
     });

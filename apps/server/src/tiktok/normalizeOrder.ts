@@ -45,6 +45,10 @@ export function extractTikTokOrderId(payload: TikTokWebhookPayload): string | un
   );
 }
 
+export function extractTikTokShopId(payload: TikTokWebhookPayload): string | undefined {
+  return stringValue(payload.shop_id) ?? stringValue(payload.shopId);
+}
+
 export function buildTikTokDedupeKey(payload: TikTokWebhookPayload, eventId: string): string {
   const orderId = extractTikTokOrderId(payload);
   const status =
