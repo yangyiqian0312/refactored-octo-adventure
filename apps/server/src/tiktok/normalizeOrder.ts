@@ -76,7 +76,9 @@ export function shouldCreateAlertForTikTokStatus(status: string | undefined): bo
     return true;
   }
 
-  return ["UNPAID", "AWAITING_SHIPMENT", "AWAITING_COLLECTION"].includes(status.toUpperCase());
+  return !["CANCEL", "CANCELLED", "IN_TRANSIT", "DELIVERED", "COMPLETED"].includes(
+    status.toUpperCase()
+  );
 }
 
 export function normalizeTikTokOrderAlert(payload: TikTokWebhookPayload): OrderAlert | undefined {

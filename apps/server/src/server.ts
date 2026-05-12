@@ -152,9 +152,16 @@ export async function createApp(config: AppConfig): Promise<AppContext> {
 
     const eventId = extractTikTokEventId(parsed.data);
     const dedupeKey = buildTikTokDedupeKey(parsed.data, eventId);
+    const orderId = extractTikTokOrderId(parsed.data);
+    const orderStatus = extractTikTokOrderStatus(parsed.data);
 
     if (store.hasDedupeKey(dedupeKey)) {
-      logger.info("tiktok webhook duplicate ignored", { eventId, dedupeKey });
+      logger.info("tiktok webhook duplicate ignored", {
+        eventId,
+        dedupeKey,
+        orderId,
+        orderStatus
+      });
       return { ok: true, duplicate: true };
     }
 
@@ -170,6 +177,8 @@ export async function createApp(config: AppConfig): Promise<AppContext> {
       void processTikTokWebhookEvent({
         payload: parsed.data,
         eventId,
+        orderId,
+        orderStatus,
         hasCredentials: config.hasTikTokCredentials,
         tiktokOrderClient,
         store,
@@ -265,6 +274,8 @@ function createTikTokOrderClient(config: AppConfig): TikTokOrderClient {
 async function processTikTokWebhookEvent({
   payload,
   eventId,
+  orderId,
+  orderStatus,
   hasCredentials,
   tiktokOrderClient,
   store,
@@ -272,23 +283,29 @@ async function processTikTokWebhookEvent({
 }: {
   payload: Record<string, unknown>;
   eventId: string;
+  orderId: string | undefined;
+  orderStatus: string | undefined;
   hasCredentials: boolean;
   tiktokOrderClient: TikTokOrderClient;
   store: InMemoryOrderStore;
   io: SocketIOServer;
 }): Promise<void> {
   try {
-    const orderId = extractTikTokOrderId(payload);
-    const orderStatus = extractTikTokOrderStatus(payload);
-
     if (!shouldCreateAlertForTikTokStatus(orderStatus)) {
       logger.info("tiktok webhook ignored for non-new-order status", {
         eventId,
-        hasOrderId: Boolean(orderId),
+        orderId,
         orderStatus
       });
       return;
     }
+
+    logger.info("tiktok order detail lookup started", {
+      eventId,
+      orderId,
+      orderStatus,
+      hasCredentials
+    });
 
     const details = orderId ? await tiktokOrderClient.getOrderDetails(orderId) : undefined;
     const alert = details
@@ -298,6 +315,8 @@ async function processTikTokWebhookEvent({
     if (!alert) {
       logger.info("tiktok webhook stored without alert", {
         eventId,
+        orderId,
+        orderStatus,
         hasCredentials,
         hasOrderId: Boolean(orderId)
       });
@@ -309,6 +328,8 @@ async function processTikTokWebhookEvent({
     logger.info("tiktok order alert created", {
       eventId,
       alertId: alert.id,
+      orderId,
+      orderStatus,
       source: alert.source,
       quantity: alert.quantity,
       tier: alert.tier
@@ -317,6 +338,8 @@ async function processTikTokWebhookEvent({
     if (error instanceof TikTokApiError) {
       logger.error("tiktok order detail lookup failed", {
         eventId,
+        orderId,
+        orderStatus,
         errorName: error.name,
         statusCode: error.statusCode,
         apiCode: error.apiCode,
@@ -327,6 +350,8 @@ async function processTikTokWebhookEvent({
 
     logger.error("tiktok order detail lookup failed", {
       eventId,
+      orderId,
+      orderStatus,
       errorName: error instanceof Error ? error.name : "UnknownError"
     });
   }
