@@ -81,7 +81,7 @@ function PendingOrderQueue({ orders }: { orders: OrderQueueItem[] }) {
           ))}
         </ol>
       ) : (
-        <p className="pending-queue__empty">waiting for the next pull</p>
+        <p className="pending-queue__empty">No one in Q rn</p>
       )}
     </aside>
   );
