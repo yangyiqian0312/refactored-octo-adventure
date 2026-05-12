@@ -17,6 +17,7 @@ export type TikTokShopOrderClientOptions = {
   appSecret: string;
   accessToken: string;
   refreshToken: string | undefined;
+  shopId: string | undefined;
   shopCipher: string;
 };
 
@@ -84,18 +85,23 @@ export class TikTokShopOrderClient implements TikTokOrderClient {
     const query = {
       app_key: this.options.appKey,
       ids: orderId,
-      shop_cipher: this.options.shopCipher,
       timestamp,
       version: this.options.apiVersion
     };
+    const signedQuery = {
+      ...query,
+      ...(this.options.shopId
+        ? { shop_id: this.options.shopId }
+        : { shop_cipher: this.options.shopCipher })
+    };
     const sign = signTikTokRequest({
       path,
-      query,
+      query: signedQuery,
       appSecret: this.options.appSecret
     });
     const url = new URL(path, this.options.baseUrl);
 
-    for (const [key, value] of Object.entries({ ...query, sign })) {
+    for (const [key, value] of Object.entries({ ...signedQuery, sign })) {
       url.searchParams.set(key, String(value));
     }
 

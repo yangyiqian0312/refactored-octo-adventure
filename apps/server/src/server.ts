@@ -427,7 +427,7 @@ function createTikTokOrderClient(config: AppConfig): TikTokOrderClient {
     config.tiktokAppKey &&
     config.tiktokAppSecret &&
     config.tiktokAccessToken &&
-    config.tiktokShopCipher
+    (config.tiktokShopId || config.tiktokShopCipher)
   ) {
     return new TikTokShopOrderClient({
       baseUrl: config.tiktokApiBaseUrl,
@@ -437,7 +437,8 @@ function createTikTokOrderClient(config: AppConfig): TikTokOrderClient {
       appSecret: config.tiktokAppSecret,
       accessToken: config.tiktokAccessToken,
       refreshToken: config.tiktokRefreshToken,
-      shopCipher: config.tiktokShopCipher
+      shopId: config.tiktokShopId,
+      shopCipher: config.tiktokShopCipher ?? ""
     });
   }
 

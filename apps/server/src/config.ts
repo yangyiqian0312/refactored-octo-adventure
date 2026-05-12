@@ -35,7 +35,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     hasTikTokCredentials: Boolean(
       env.TIKTOK_APP_KEY &&
         env.TIKTOK_APP_SECRET &&
-        env.TIKTOK_SHOP_CIPHER &&
+        (env.TIKTOK_SHOP_ID || env.TIKTOK_SHOP_CIPHER) &&
         env.TIKTOK_ACCESS_TOKEN
     )
   };
