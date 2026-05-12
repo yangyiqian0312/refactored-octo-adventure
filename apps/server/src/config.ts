@@ -4,6 +4,7 @@ export type AppConfig = {
   port: number;
   overlayAllowedToken: string;
   tiktokApiBaseUrl: string;
+  tiktokApiVersion: string;
   tiktokAppKey: string | undefined;
   tiktokAppSecret: string | undefined;
   tiktokShopId: string | undefined;
@@ -19,6 +20,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     port: Number(env.PORT ?? 3001),
     overlayAllowedToken: env.OVERLAY_ALLOWED_TOKEN ?? "local-dev-overlay-token",
     tiktokApiBaseUrl: env.TIKTOK_API_BASE_URL ?? "https://open-api.tiktokglobalshop.com",
+    tiktokApiVersion: env.TIKTOK_API_VERSION ?? "202309",
     tiktokAppKey: env.TIKTOK_APP_KEY || undefined,
     tiktokAppSecret: env.TIKTOK_APP_SECRET || undefined,
     tiktokShopId: env.TIKTOK_SHOP_ID || undefined,

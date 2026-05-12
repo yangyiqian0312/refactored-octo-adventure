@@ -11,6 +11,7 @@ export type TikTokOrderDetails = {
 
 export type TikTokShopOrderClientOptions = {
   baseUrl: string;
+  apiVersion: string;
   appKey: string;
   appSecret: string;
   accessToken: string;
@@ -57,13 +58,14 @@ export class TikTokShopOrderClient implements TikTokOrderClient {
   constructor(private readonly options: TikTokShopOrderClientOptions) {}
 
   async getOrderDetails(orderId: string): Promise<TikTokOrderDetails | undefined> {
-    const path = "/order/202309/orders";
+    const path = `/order/${this.options.apiVersion}/orders`;
     const timestamp = Math.floor(Date.now() / 1000);
     const query = {
       app_key: this.options.appKey,
       ids: orderId,
       shop_cipher: this.options.shopCipher,
-      timestamp
+      timestamp,
+      version: this.options.apiVersion
     };
     const sign = signTikTokRequest({
       path,

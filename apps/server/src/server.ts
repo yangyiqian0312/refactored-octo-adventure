@@ -283,6 +283,7 @@ function createTikTokOrderClient(config: AppConfig): TikTokOrderClient {
   ) {
     return new TikTokShopOrderClient({
       baseUrl: config.tiktokApiBaseUrl,
+      apiVersion: config.tiktokApiVersion,
       appKey: config.tiktokAppKey,
       appSecret: config.tiktokAppSecret,
       accessToken: config.tiktokAccessToken,
@@ -363,6 +364,7 @@ async function processTikTokWebhookEvent({
         orderId,
         orderStatus,
         errorName: error.name,
+        message: error.message,
         statusCode: error.statusCode,
         apiCode: error.apiCode,
         requestId: error.requestId

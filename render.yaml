@@ -10,6 +10,8 @@ services:
         sync: false
       - key: TIKTOK_API_BASE_URL
         value: https://open-api.tiktokglobalshop.com
+      - key: TIKTOK_API_VERSION
+        value: "202309"
       - key: TIKTOK_APP_KEY
         sync: false
       - key: TIKTOK_APP_SECRET
