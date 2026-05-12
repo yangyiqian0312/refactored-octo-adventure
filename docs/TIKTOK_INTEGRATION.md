@@ -26,7 +26,9 @@ Current MVP behavior:
 - supports local unsigned testing only when `TIKTOK_WEBHOOK_VERIFY_BYPASS=true`
 - parses the event with a permissive Zod schema
 - extracts `event_id` or `eventId`
-- extracts a possible `order_id` or `orderId`
+- extracts a possible notification id from `tts_notification_id`, `event_id`, or `eventId`
+- extracts a possible order id from `data.order_id`, `order_id`, or `orderId`
+- extracts order status from `data.order_status` when present
 - deduplicates by `order id + status` when available, otherwise event id
 - stores raw webhook payloads in memory for local debugging
 - emits a normalized alert only if safe display fields are present or mocked in the payload
@@ -63,6 +65,7 @@ Before production:
 PORT=3001
 OVERLAY_ALLOWED_TOKEN=local-dev-overlay-token
 
+TIKTOK_API_BASE_URL=https://open-api.tiktokglobalshop.com
 TIKTOK_APP_KEY=
 TIKTOK_APP_SECRET=
 TIKTOK_SHOP_ID=

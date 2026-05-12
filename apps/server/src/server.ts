@@ -15,8 +15,15 @@ import { InMemoryOrderStore } from "./store.js";
 import {
   buildTikTokDedupeKey,
   extractTikTokEventId,
+  extractTikTokOrderId,
+  normalizeTikTokOrderDetailsAlert,
   normalizeTikTokOrderAlert
 } from "./tiktok/normalizeOrder.js";
+import {
+  PlaceholderTikTokOrderClient,
+  TikTokShopOrderClient,
+  type TikTokOrderClient
+} from "./tiktok/client.js";
 import { tiktokWebhookPayloadSchema } from "./tiktok/types.js";
 import { verifyTikTokWebhookSignature } from "./tiktok/webhookVerifier.js";
 
@@ -32,6 +39,7 @@ export async function createApp(config: AppConfig): Promise<AppContext> {
     bodyLimit: 1024 * 1024
   });
   const store = new InMemoryOrderStore();
+  const tiktokOrderClient = createTikTokOrderClient(config);
 
   await app.register(cors, {
     origin: true,
@@ -127,7 +135,8 @@ export async function createApp(config: AppConfig): Promise<AppContext> {
       logger.warn("tiktok webhook invalid payload", {
         contentType: request.headers["content-type"],
         payloadKind: describePayloadKind(parsedBody),
-        bodyLength: rawBody.length
+        bodyLength: rawBody.length,
+        topLevelKeys: listTopLevelKeys(parsedBody)
       });
       return { ok: true, eventId: `invalid_${crypto.randomUUID()}` };
     }
@@ -155,24 +164,13 @@ export async function createApp(config: AppConfig): Promise<AppContext> {
     });
 
     queueMicrotask(() => {
-      const alert = normalizeTikTokOrderAlert(parsed.data);
-
-      if (!alert) {
-        logger.info("tiktok webhook stored without alert", {
-          eventId,
-          hasCredentials: config.hasTikTokCredentials
-        });
-        return;
-      }
-
-      store.addAlert(alert);
-      io.emit("order:created", alert);
-      logger.info("tiktok order alert created", {
+      void processTikTokWebhookEvent({
+        payload: parsed.data,
         eventId,
-        alertId: alert.id,
-        source: alert.source,
-        quantity: alert.quantity,
-        tier: alert.tier
+        hasCredentials: config.hasTikTokCredentials,
+        tiktokOrderClient,
+        store,
+        io
       });
     });
 
@@ -240,4 +238,71 @@ function listTopLevelKeys(body: unknown): string {
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function createTikTokOrderClient(config: AppConfig): TikTokOrderClient {
+  if (
+    config.tiktokAppKey &&
+    config.tiktokAppSecret &&
+    config.tiktokAccessToken &&
+    config.tiktokShopCipher
+  ) {
+    return new TikTokShopOrderClient({
+      baseUrl: config.tiktokApiBaseUrl,
+      appKey: config.tiktokAppKey,
+      appSecret: config.tiktokAppSecret,
+      accessToken: config.tiktokAccessToken,
+      shopCipher: config.tiktokShopCipher
+    });
+  }
+
+  return new PlaceholderTikTokOrderClient();
+}
+
+async function processTikTokWebhookEvent({
+  payload,
+  eventId,
+  hasCredentials,
+  tiktokOrderClient,
+  store,
+  io
+}: {
+  payload: Record<string, unknown>;
+  eventId: string;
+  hasCredentials: boolean;
+  tiktokOrderClient: TikTokOrderClient;
+  store: InMemoryOrderStore;
+  io: SocketIOServer;
+}): Promise<void> {
+  try {
+    const orderId = extractTikTokOrderId(payload);
+    const details = orderId ? await tiktokOrderClient.getOrderDetails(orderId) : undefined;
+    const alert = details
+      ? normalizeTikTokOrderDetailsAlert(details)
+      : normalizeTikTokOrderAlert(payload);
+
+    if (!alert) {
+      logger.info("tiktok webhook stored without alert", {
+        eventId,
+        hasCredentials,
+        hasOrderId: Boolean(orderId)
+      });
+      return;
+    }
+
+    store.addAlert(alert);
+    io.emit("order:created", alert);
+    logger.info("tiktok order alert created", {
+      eventId,
+      alertId: alert.id,
+      source: alert.source,
+      quantity: alert.quantity,
+      tier: alert.tier
+    });
+  } catch (error) {
+    logger.error("tiktok order detail lookup failed", {
+      eventId,
+      errorName: error instanceof Error ? error.name : "UnknownError"
+    });
+  }
 }
