@@ -1,4 +1,4 @@
-import type { OrderAlert } from "@live-alerts/shared";
+import type { OrderAlert, OrderQueueItem } from "@live-alerts/shared";
 import { useEffect, useMemo, useState } from "react";
 import { enqueueAlert, popNextAlert } from "./alertQueue.js";
 import { useOrderSocket } from "./useOrderSocket.js";
@@ -10,7 +10,7 @@ export function App() {
   const serverUrl = params.get("server") ?? "http://localhost:3001";
   const token = params.get("token") ?? "";
   const debug = params.get("debug") === "1";
-  const { connectionState, latestAlert, errorMessage } = useOrderSocket(serverUrl, token);
+  const { connectionState, latestAlert, pendingOrders, errorMessage } = useOrderSocket(serverUrl, token);
   const [queue, setQueue] = useState<OrderAlert[]>([]);
   const [currentAlert, setCurrentAlert] = useState<OrderAlert | undefined>();
 
@@ -56,7 +56,34 @@ export function App() {
       <section className="alert-stage">
         {currentAlert ? <OrderAlertCard alert={currentAlert} key={currentAlert.id} /> : null}
       </section>
+
+      <PendingOrderQueue orders={pendingOrders} />
     </main>
+  );
+}
+
+function PendingOrderQueue({ orders }: { orders: OrderQueueItem[] }) {
+  return (
+    <aside className="pending-queue" aria-label="Awaiting shipment orders">
+      <div className="pending-queue__header">
+        <span className="pending-queue__label">
+          {orders.length === 0 ? "Q is Open :3" : "Queue"}
+        </span>
+        {orders.length > 0 ? <span className="pending-queue__count">{orders.length}</span> : null}
+      </div>
+      {orders.length > 0 ? (
+        <ol className="pending-queue__list">
+          {orders.slice(0, 8).map((order, index) => (
+            <li className="pending-queue__item" key={order.orderId}>
+              <span className="pending-queue__rank">{index + 1}</span>
+              <span className="pending-queue__name">{order.buyerDisplayName}</span>
+            </li>
+          ))}
+        </ol>
+      ) : (
+        <p className="pending-queue__empty">waiting for the next pull</p>
+      )}
+    </aside>
   );
 }
 

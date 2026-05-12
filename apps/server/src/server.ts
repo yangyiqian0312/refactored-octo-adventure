@@ -3,6 +3,7 @@ import {
   calculateOrderTier,
   maskBuyerDisplayName,
   orderAlertSchema,
+  orderQueueItemSchema,
   testOrderRequestSchema,
   type OrderAlert
 } from "@live-alerts/shared";
@@ -78,6 +79,7 @@ export async function createApp(config: AppConfig): Promise<AppContext> {
   io.on("connection", (socket) => {
     logger.info("overlay connected", { socketId: socket.id });
     socket.emit("recent:alerts", store.getRecentAlerts());
+    socket.emit("order:queue", store.getPendingOrders());
   });
 
   app.get("/health", async () => ({ ok: true }));
@@ -479,6 +481,10 @@ async function processTikTokWebhookEvent({
 }): Promise<void> {
   try {
     if (!shouldCreateAlertForTikTokStatus(orderStatus)) {
+      if (orderId && store.removePendingOrder(orderId)) {
+        io.emit("order:queue", store.getPendingOrders());
+      }
+
       logger.info("tiktok webhook ignored for non-new-order status", {
         eventId,
         orderId,
@@ -502,18 +508,44 @@ async function processTikTokWebhookEvent({
       : normalizeTikTokOrderAlert(payload);
 
     if (!alert) {
+      const shape = tiktokOrderClient.getLastOrderDetailShape();
+      if (orderId) {
+        store.upsertPendingOrder(orderQueueItemSchema.parse({
+          orderId,
+          buyerDisplayName: "Someone",
+          status: orderStatus ?? "AWAITING_SHIPMENT",
+          updatedAt: new Date().toISOString()
+        }));
+        io.emit("order:queue", store.getPendingOrders());
+      }
+
       logger.info("tiktok webhook stored without alert", {
         eventId,
         orderId,
         shopId,
         orderStatus,
         hasCredentials,
-        hasOrderId: Boolean(orderId)
+        hasOrderId: Boolean(orderId),
+        orderDetailDataKeys: shape?.dataKeys,
+        orderDetailOrderKeys: shape?.orderKeys,
+        orderDetailLineItemKeys: shape?.lineItemKeys
       });
       return;
     }
 
     store.addAlert(alert);
+    if (alert.orderId) {
+      store.upsertPendingOrder(orderQueueItemSchema.parse({
+        orderId: alert.orderId,
+        buyerDisplayName: alert.buyerDisplayName,
+        productTitle: alert.productTitle,
+        quantity: alert.quantity,
+        status: orderStatus ?? "AWAITING_SHIPMENT",
+        updatedAt: new Date().toISOString()
+      }));
+      io.emit("order:queue", store.getPendingOrders());
+    }
+
     io.emit("order:created", alert);
     logger.info("tiktok order alert created", {
       eventId,

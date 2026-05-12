@@ -9,6 +9,12 @@ export type TikTokOrderDetails = {
   imageUrl?: string;
 };
 
+export type TikTokOrderDetailShape = {
+  dataKeys: string;
+  orderKeys: string;
+  lineItemKeys: string;
+};
+
 export type TikTokShopOrderClientOptions = {
   baseUrl: string;
   authBaseUrl: string;
@@ -35,10 +41,15 @@ export class TikTokApiError extends Error {
 
 export interface TikTokOrderClient {
   getOrderDetails(orderId: string): Promise<TikTokOrderDetails | undefined>;
+  getLastOrderDetailShape(): TikTokOrderDetailShape | undefined;
 }
 
 export class PlaceholderTikTokOrderClient implements TikTokOrderClient {
   async getOrderDetails(_orderId: string): Promise<TikTokOrderDetails | undefined> {
+    return undefined;
+  }
+
+  getLastOrderDetailShape(): TikTokOrderDetailShape | undefined {
     return undefined;
   }
 }
@@ -60,6 +71,7 @@ const orderDetailResponseSchema = z
 export class TikTokShopOrderClient implements TikTokOrderClient {
   private accessToken: string;
   private refreshToken: string | undefined;
+  private lastOrderDetailShape: TikTokOrderDetailShape | undefined;
 
   constructor(private readonly options: TikTokShopOrderClientOptions) {
     this.accessToken = options.accessToken;
@@ -77,6 +89,10 @@ export class TikTokShopOrderClient implements TikTokOrderClient {
       await this.refreshAccessToken();
       return this.fetchOrderDetails(orderId);
     }
+  }
+
+  getLastOrderDetailShape(): TikTokOrderDetailShape | undefined {
+    return this.lastOrderDetailShape;
   }
 
   private async fetchOrderDetails(orderId: string): Promise<TikTokOrderDetails | undefined> {
@@ -115,6 +131,7 @@ export class TikTokShopOrderClient implements TikTokOrderClient {
 
     const responseJson = await response.json();
     const parsed = orderDetailResponseSchema.parse(responseJson);
+    this.lastOrderDetailShape = describeOrderDetailShape(parsed.data);
 
     if (!response.ok || (parsed.code !== undefined && parsed.code !== 0)) {
       throw new TikTokApiError(
@@ -174,23 +191,38 @@ const tokenRefreshResponseSchema = z
   .passthrough();
 
 function normalizeOrderDetail(orderId: string, order: Record<string, unknown>): TikTokOrderDetails | undefined {
-  const lineItems = arrayValue(order.line_items) ?? arrayValue(order.lineItems) ?? arrayValue(order.items);
-  const firstLineItem = lineItems?.find(isRecord);
+  const lineItems =
+    arrayValue(order.line_items) ??
+    arrayValue(order.lineItems) ??
+    arrayValue(order.items) ??
+    arrayValue(order.skus);
+  const firstLineItem = lineItems?.find(isRecord) ?? order;
 
   if (!firstLineItem) {
     return undefined;
   }
 
   const productTitle =
+    stringValue(order.product_name) ??
+    stringValue(order.productName) ??
+    stringValue(order.product_title) ??
+    stringValue(order.productTitle) ??
     stringValue(firstLineItem.product_name) ??
     stringValue(firstLineItem.productName) ??
+    stringValue(firstLineItem.product_title) ??
+    stringValue(firstLineItem.productTitle) ??
     stringValue(firstLineItem.sku_name) ??
     stringValue(firstLineItem.skuName) ??
+    stringValue(firstLineItem.seller_sku) ??
     stringValue(firstLineItem.name);
   const quantity =
+    numberValue(order.quantity) ??
+    numberValue(order.qty) ??
     numberValue(firstLineItem.quantity) ??
     numberValue(firstLineItem.qty) ??
-    numberValue(firstLineItem.item_quantity);
+    numberValue(firstLineItem.item_quantity) ??
+    numberValue(firstLineItem.product_quantity) ??
+    1;
 
   if (!productTitle || !quantity) {
     return undefined;
@@ -221,6 +253,26 @@ function normalizeOrderDetail(orderId: string, order: Record<string, unknown>): 
   }
 
   return details;
+}
+
+function describeOrderDetailShape(data: unknown): TikTokOrderDetailShape {
+  const dataRecord = isRecord(data) ? data : {};
+  const orders = arrayValue(dataRecord.orders);
+  const order = orders?.find(isRecord);
+  const lineItems =
+    (order
+      ? arrayValue(order.line_items) ??
+        arrayValue(order.lineItems) ??
+        arrayValue(order.items) ??
+        arrayValue(order.skus)
+      : undefined) ?? [];
+  const lineItem = lineItems.find(isRecord);
+
+  return {
+    dataKeys: Object.keys(dataRecord).slice(0, 40).join(","),
+    orderKeys: order ? Object.keys(order).slice(0, 80).join(",") : "",
+    lineItemKeys: lineItem ? Object.keys(lineItem).slice(0, 80).join(",") : ""
+  };
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

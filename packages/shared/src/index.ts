@@ -14,6 +14,15 @@ export const orderAlertSchema = z.object({
   tier: orderAlertTierSchema
 });
 
+export const orderQueueItemSchema = z.object({
+  orderId: z.string().min(1),
+  buyerDisplayName: z.string().min(1).default("Someone"),
+  productTitle: z.string().min(1).optional(),
+  quantity: z.number().int().positive().optional(),
+  status: z.string().min(1),
+  updatedAt: z.string().datetime()
+});
+
 export const testOrderRequestSchema = z.object({
   buyerName: z.string().trim().min(1).max(64).optional(),
   productTitle: z.string().trim().min(1).max(160),
@@ -23,6 +32,7 @@ export const testOrderRequestSchema = z.object({
 
 export type OrderAlertTier = z.infer<typeof orderAlertTierSchema>;
 export type OrderAlert = z.infer<typeof orderAlertSchema>;
+export type OrderQueueItem = z.infer<typeof orderQueueItemSchema>;
 export type TestOrderRequest = z.infer<typeof testOrderRequestSchema>;
 
 export function calculateOrderTier(quantity: number): OrderAlertTier {

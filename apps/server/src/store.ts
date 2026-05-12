@@ -1,4 +1,4 @@
-import type { OrderAlert } from "@live-alerts/shared";
+import type { OrderAlert, OrderQueueItem } from "@live-alerts/shared";
 
 export type RawWebhookEvent = {
   eventId: string;
@@ -10,6 +10,7 @@ export type RawWebhookEvent = {
 export class InMemoryOrderStore {
   private readonly alerts: OrderAlert[] = [];
   private readonly rawWebhookEvents: RawWebhookEvent[] = [];
+  private readonly pendingOrders = new Map<string, OrderQueueItem>();
   private readonly dedupeKeys = new Set<string>();
 
   constructor(private readonly maxItems = 50) {}
@@ -38,6 +39,20 @@ export class InMemoryOrderStore {
 
   getRawWebhookEvents(): RawWebhookEvent[] {
     return [...this.rawWebhookEvents];
+  }
+
+  upsertPendingOrder(order: OrderQueueItem): void {
+    this.pendingOrders.set(order.orderId, order);
+  }
+
+  removePendingOrder(orderId: string): boolean {
+    return this.pendingOrders.delete(orderId);
+  }
+
+  getPendingOrders(): OrderQueueItem[] {
+    return [...this.pendingOrders.values()].sort((left, right) =>
+      left.updatedAt.localeCompare(right.updatedAt)
+    );
   }
 
   private trim<T>(items: T[]): void {

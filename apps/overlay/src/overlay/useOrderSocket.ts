@@ -1,4 +1,9 @@
-import { orderAlertSchema, type OrderAlert } from "@live-alerts/shared";
+import {
+  orderAlertSchema,
+  orderQueueItemSchema,
+  type OrderAlert,
+  type OrderQueueItem
+} from "@live-alerts/shared";
 import { useEffect, useMemo, useState } from "react";
 import { io } from "socket.io-client";
 
@@ -7,12 +12,14 @@ export type ConnectionState = "connecting" | "connected" | "disconnected" | "err
 export type OrderSocketState = {
   connectionState: ConnectionState;
   latestAlert: OrderAlert | undefined;
+  pendingOrders: OrderQueueItem[];
   errorMessage: string | undefined;
 };
 
 export function useOrderSocket(serverUrl: string, token: string): OrderSocketState {
   const [connectionState, setConnectionState] = useState<ConnectionState>("connecting");
   const [latestAlert, setLatestAlert] = useState<OrderAlert | undefined>();
+  const [pendingOrders, setPendingOrders] = useState<OrderQueueItem[]>([]);
   const [errorMessage, setErrorMessage] = useState<string | undefined>();
 
   const normalizedServerUrl = useMemo(() => serverUrl.replace(/\/$/, ""), [serverUrl]);
@@ -53,10 +60,18 @@ export function useOrderSocket(serverUrl: string, token: string): OrderSocketSta
       }
     });
 
+    socket.on("order:queue", (payload: unknown) => {
+      const parsed = orderQueueItemSchema.array().safeParse(payload);
+
+      if (parsed.success) {
+        setPendingOrders(parsed.data);
+      }
+    });
+
     return () => {
       socket.disconnect();
     };
   }, [normalizedServerUrl, token]);
 
-  return { connectionState, latestAlert, errorMessage };
+  return { connectionState, latestAlert, pendingOrders, errorMessage };
 }
