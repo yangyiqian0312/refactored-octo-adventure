@@ -90,9 +90,9 @@ export class TikTokShopOrderClient implements TikTokOrderClient {
     };
     const signedQuery = {
       ...query,
-      ...(this.options.shopId
-        ? { shop_id: this.options.shopId }
-        : { shop_cipher: this.options.shopCipher })
+      ...(this.options.shopCipher
+        ? { shop_cipher: this.options.shopCipher }
+        : { shop_id: this.options.shopId ?? "" })
     };
     const sign = signTikTokRequest({
       path,
