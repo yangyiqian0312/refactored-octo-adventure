@@ -3,7 +3,7 @@ services:
     name: tiktok-shop-live-alert-server
     runtime: node
     plan: free
-    buildCommand: corepack enable && corepack pnpm install --prod=false && corepack pnpm --filter @live-alerts/shared build && corepack pnpm --filter @live-alerts/server build
+    buildCommand: corepack pnpm install --prod=false && corepack pnpm --filter @live-alerts/shared build && corepack pnpm --filter @live-alerts/server build
     startCommand: corepack pnpm --filter @live-alerts/server start
     envVars:
       - key: OVERLAY_ALLOWED_TOKEN
