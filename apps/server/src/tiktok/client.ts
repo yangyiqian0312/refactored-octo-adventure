@@ -11,10 +11,12 @@ export type TikTokOrderDetails = {
 
 export type TikTokShopOrderClientOptions = {
   baseUrl: string;
+  authBaseUrl: string;
   apiVersion: string;
   appKey: string;
   appSecret: string;
   accessToken: string;
+  refreshToken: string | undefined;
   shopCipher: string;
 };
 
@@ -55,9 +57,28 @@ const orderDetailResponseSchema = z
   .passthrough();
 
 export class TikTokShopOrderClient implements TikTokOrderClient {
-  constructor(private readonly options: TikTokShopOrderClientOptions) {}
+  private accessToken: string;
+  private refreshToken: string | undefined;
+
+  constructor(private readonly options: TikTokShopOrderClientOptions) {
+    this.accessToken = options.accessToken;
+    this.refreshToken = options.refreshToken;
+  }
 
   async getOrderDetails(orderId: string): Promise<TikTokOrderDetails | undefined> {
+    try {
+      return await this.fetchOrderDetails(orderId);
+    } catch (error) {
+      if (!(error instanceof TikTokApiError) || !this.refreshToken) {
+        throw error;
+      }
+
+      await this.refreshAccessToken();
+      return this.fetchOrderDetails(orderId);
+    }
+  }
+
+  private async fetchOrderDetails(orderId: string): Promise<TikTokOrderDetails | undefined> {
     const path = `/order/${this.options.apiVersion}/orders`;
     const timestamp = Math.floor(Date.now() / 1000);
     const query = {
@@ -82,7 +103,7 @@ export class TikTokShopOrderClient implements TikTokOrderClient {
       method: "GET",
       headers: {
         "content-type": "application/json",
-        "x-tts-access-token": this.options.accessToken
+        "x-tts-access-token": this.accessToken
       }
     });
 
@@ -102,7 +123,49 @@ export class TikTokShopOrderClient implements TikTokOrderClient {
 
     return order ? normalizeOrderDetail(orderId, order) : undefined;
   }
+
+  private async refreshAccessToken(): Promise<void> {
+    const url = new URL("/api/v2/token/refresh", this.options.authBaseUrl);
+
+    url.searchParams.set("app_key", this.options.appKey);
+    url.searchParams.set("app_secret", this.options.appSecret);
+    url.searchParams.set("refresh_token", this.refreshToken ?? "");
+    url.searchParams.set("grant_type", "refresh_token");
+
+    const response = await fetch(url, { method: "GET" });
+    const parsed = tokenRefreshResponseSchema.parse(await response.json());
+
+    if (!response.ok || parsed.code !== 0 || !parsed.data?.access_token) {
+      throw new TikTokApiError(
+        parsed.message ?? `TikTok token refresh failed with HTTP ${response.status}`,
+        response.status,
+        parsed.code,
+        parsed.request_id
+      );
+    }
+
+    this.accessToken = parsed.data.access_token;
+
+    if (parsed.data.refresh_token) {
+      this.refreshToken = parsed.data.refresh_token;
+    }
+  }
 }
+
+const tokenRefreshResponseSchema = z
+  .object({
+    code: z.number(),
+    message: z.string().optional(),
+    request_id: z.string().optional(),
+    data: z
+      .object({
+        access_token: z.string().optional(),
+        refresh_token: z.string().optional()
+      })
+      .passthrough()
+      .optional()
+  })
+  .passthrough();
 
 function normalizeOrderDetail(orderId: string, order: Record<string, unknown>): TikTokOrderDetails | undefined {
   const lineItems = arrayValue(order.line_items) ?? arrayValue(order.lineItems) ?? arrayValue(order.items);

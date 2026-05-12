@@ -283,10 +283,12 @@ function createTikTokOrderClient(config: AppConfig): TikTokOrderClient {
   ) {
     return new TikTokShopOrderClient({
       baseUrl: config.tiktokApiBaseUrl,
+      authBaseUrl: config.tiktokAuthBaseUrl,
       apiVersion: config.tiktokApiVersion,
       appKey: config.tiktokAppKey,
       appSecret: config.tiktokAppSecret,
       accessToken: config.tiktokAccessToken,
+      refreshToken: config.tiktokRefreshToken,
       shopCipher: config.tiktokShopCipher
     });
   }
