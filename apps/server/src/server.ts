@@ -148,9 +148,19 @@ export async function createApp(config: AppConfig): Promise<AppContext> {
         appSecret: config.tiktokAppSecret
       };
       const token = await exchangeTikTokAuthCode(code, options);
-      const shops = await getTikTokAuthorizedShops(token.accessToken, options);
+      let shops: Array<{ id: string; cipher: string; name: string; region?: string; sellerType?: string }> = [];
+      let shopsWarning: string | undefined;
 
-      return reply.type("text/html").send(renderOAuthSuccessPage(token, shops));
+      try {
+        shops = await getTikTokAuthorizedShops(token.accessToken, options);
+      } catch (error) {
+        shopsWarning =
+          error instanceof Error
+            ? error.message
+            : "Authorized shops lookup failed. The token may not include that scope.";
+      }
+
+      return reply.type("text/html").send(renderOAuthSuccessPage(token, shops, shopsWarning));
     } catch (error) {
       logger.error("tiktok oauth callback failed", {
         errorName: error instanceof Error ? error.name : "UnknownError"
@@ -332,7 +342,8 @@ function renderOAuthSuccessPage(
     sellerBaseRegion?: string;
     grantedScopes: string[];
   },
-  shops: Array<{ id: string; cipher: string; name: string; region?: string; sellerType?: string }>
+  shops: Array<{ id: string; cipher: string; name: string; region?: string; sellerType?: string }>,
+  shopsWarning?: string
 ): string {
   const primaryShop = shops[0];
   const envLines = [
@@ -362,6 +373,11 @@ function renderOAuthSuccessPage(
         token.sellerBaseRegion ?? ""
       )}</p>
       <h2>Authorized shops</h2>
+      ${
+        shopsWarning
+          ? `<p class="warning">Authorized shops lookup failed: ${escapeHtml(shopsWarning)}</p>`
+          : ""
+      }
       <ul>${shopList}</ul>
       <h2>Granted scopes</h2>
       <pre>${escapeHtml(token.grantedScopes.join("\n") || "No scopes returned")}</pre>
