@@ -17,6 +17,18 @@ export type TikTokShopOrderClientOptions = {
   shopCipher: string;
 };
 
+export class TikTokApiError extends Error {
+  constructor(
+    message: string,
+    readonly statusCode?: number,
+    readonly apiCode?: number,
+    readonly requestId?: string
+  ) {
+    super(message);
+    this.name = "TikTokApiError";
+  }
+}
+
 export interface TikTokOrderClient {
   getOrderDetails(orderId: string): Promise<TikTokOrderDetails | undefined>;
 }
@@ -72,11 +84,18 @@ export class TikTokShopOrderClient implements TikTokOrderClient {
       }
     });
 
-    if (!response.ok) {
-      throw new Error(`TikTok Order Detail API failed with HTTP ${response.status}`);
+    const responseJson = await response.json();
+    const parsed = orderDetailResponseSchema.parse(responseJson);
+
+    if (!response.ok || (parsed.code !== undefined && parsed.code !== 0)) {
+      throw new TikTokApiError(
+        parsed.message ?? `TikTok Order Detail API failed with HTTP ${response.status}`,
+        response.status,
+        parsed.code,
+        parsed.request_id
+      );
     }
 
-    const parsed = orderDetailResponseSchema.parse(await response.json());
     const order = parsed.data?.orders?.[0];
 
     return order ? normalizeOrderDetail(orderId, order) : undefined;

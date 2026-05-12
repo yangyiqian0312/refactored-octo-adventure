@@ -16,11 +16,14 @@ import {
   buildTikTokDedupeKey,
   extractTikTokEventId,
   extractTikTokOrderId,
+  extractTikTokOrderStatus,
   normalizeTikTokOrderDetailsAlert,
-  normalizeTikTokOrderAlert
+  normalizeTikTokOrderAlert,
+  shouldCreateAlertForTikTokStatus
 } from "./tiktok/normalizeOrder.js";
 import {
   PlaceholderTikTokOrderClient,
+  TikTokApiError,
   TikTokShopOrderClient,
   type TikTokOrderClient
 } from "./tiktok/client.js";
@@ -276,6 +279,17 @@ async function processTikTokWebhookEvent({
 }): Promise<void> {
   try {
     const orderId = extractTikTokOrderId(payload);
+    const orderStatus = extractTikTokOrderStatus(payload);
+
+    if (!shouldCreateAlertForTikTokStatus(orderStatus)) {
+      logger.info("tiktok webhook ignored for non-new-order status", {
+        eventId,
+        hasOrderId: Boolean(orderId),
+        orderStatus
+      });
+      return;
+    }
+
     const details = orderId ? await tiktokOrderClient.getOrderDetails(orderId) : undefined;
     const alert = details
       ? normalizeTikTokOrderDetailsAlert(details)
@@ -300,6 +314,17 @@ async function processTikTokWebhookEvent({
       tier: alert.tier
     });
   } catch (error) {
+    if (error instanceof TikTokApiError) {
+      logger.error("tiktok order detail lookup failed", {
+        eventId,
+        errorName: error.name,
+        statusCode: error.statusCode,
+        apiCode: error.apiCode,
+        requestId: error.requestId
+      });
+      return;
+    }
+
     logger.error("tiktok order detail lookup failed", {
       eventId,
       errorName: error instanceof Error ? error.name : "UnknownError"

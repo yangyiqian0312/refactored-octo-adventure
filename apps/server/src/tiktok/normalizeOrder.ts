@@ -61,6 +61,24 @@ export function buildTikTokDedupeKey(payload: TikTokWebhookPayload, eventId: str
   return `event:${eventId}`;
 }
 
+export function extractTikTokOrderStatus(payload: TikTokWebhookPayload): string | undefined {
+  return (
+    stringValue(payload.status) ??
+    stringValue(payload.order_status) ??
+    (isRecord(payload.data)
+      ? stringValue(payload.data.status) ?? stringValue(payload.data.order_status)
+      : undefined)
+  );
+}
+
+export function shouldCreateAlertForTikTokStatus(status: string | undefined): boolean {
+  if (!status) {
+    return true;
+  }
+
+  return ["UNPAID", "AWAITING_SHIPMENT", "AWAITING_COLLECTION"].includes(status.toUpperCase());
+}
+
 export function normalizeTikTokOrderAlert(payload: TikTokWebhookPayload): OrderAlert | undefined {
   const data = isRecord(payload.data) ? payload.data : {};
   const maybeFields = pickDisplayFields(data);

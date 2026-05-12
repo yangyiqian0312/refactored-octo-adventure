@@ -29,6 +29,7 @@ Current MVP behavior:
 - extracts a possible notification id from `tts_notification_id`, `event_id`, or `eventId`
 - extracts a possible order id from `data.order_id`, `order_id`, or `orderId`
 - extracts order status from `data.order_status` when present
+- only creates OBS alerts for new-order-like statuses: `UNPAID`, `AWAITING_SHIPMENT`, or `AWAITING_COLLECTION`
 - deduplicates by `order id + status` when available, otherwise event id
 - stores raw webhook payloads in memory for local debugging
 - emits a normalized alert only if safe display fields are present or mocked in the payload
