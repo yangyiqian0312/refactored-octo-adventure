@@ -119,6 +119,24 @@ export async function createApp(config: AppConfig): Promise<AppContext> {
     alerts: store.getRecentAlerts()
   }));
 
+  app.get("/api/recent-webhooks", async (request, reply) => {
+    if (!isAuthorizedDebugRequest(request.headers.authorization, config.overlayAllowedToken)) {
+      return reply.status(401).send({ ok: false });
+    }
+
+    return {
+      ok: true,
+      webhooks: store.getRawWebhookEvents().map((event) => ({
+        eventId: event.eventId,
+        dedupeKey: event.dedupeKey,
+        receivedAt: event.receivedAt,
+        orderId: extractTikTokOrderId(event.payload as Record<string, unknown>),
+        orderStatus: extractTikTokOrderStatus(event.payload as Record<string, unknown>),
+        topLevelKeys: listTopLevelKeys(event.payload)
+      }))
+    };
+  });
+
   app.post("/webhooks/tiktok", async (request, reply) => {
     const rawBody = typeof request.body === "string" ? request.body : JSON.stringify(request.body ?? {});
     const verification = verifyTikTokWebhookSignature(rawBody, request.headers, {
@@ -250,6 +268,10 @@ function listTopLevelKeys(body: unknown): string {
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function isAuthorizedDebugRequest(authorization: string | undefined, token: string): boolean {
+  return authorization === `Bearer ${token}`;
 }
 
 function createTikTokOrderClient(config: AppConfig): TikTokOrderClient {
