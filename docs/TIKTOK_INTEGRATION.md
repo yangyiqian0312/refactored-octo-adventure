@@ -30,6 +30,7 @@ Current MVP behavior:
 - extracts a possible order id from `data.order_id`, `order_id`, or `orderId`
 - extracts order status from `data.order_status` when present
 - creates OBS alerts only for `AWAITING_SHIPMENT`, which represents a paid order ready for shipment; all other order status webhooks are ignored for overlay alerts
+- ignores webhook events from shops whose `shop_id` does not match `TIKTOK_SHOP_ID`, when that env var is configured
 - deduplicates by `order id + status` when available, otherwise event id
 - stores raw webhook payloads in memory for local debugging
 - emits a normalized alert only if safe display fields are present or mocked in the payload

@@ -229,6 +229,17 @@ export async function createApp(config: AppConfig): Promise<AppContext> {
     const shopId = extractTikTokShopId(parsed.data);
     const orderStatus = extractTikTokOrderStatus(parsed.data);
 
+    if (config.tiktokShopId && shopId && shopId !== config.tiktokShopId) {
+      logger.info("tiktok webhook ignored for unconfigured shop", {
+        eventId,
+        orderId,
+        shopId,
+        configuredShopId: config.tiktokShopId,
+        orderStatus
+      });
+      return { ok: true, ignored: true };
+    }
+
     if (store.hasDedupeKey(dedupeKey)) {
       logger.info("tiktok webhook duplicate ignored", {
         eventId,
