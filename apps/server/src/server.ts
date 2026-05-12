@@ -43,6 +43,7 @@ export async function createApp(config: AppConfig): Promise<AppContext> {
     { parseAs: "string" },
     (_request, body, done) => done(null, body)
   );
+  app.addContentTypeParser("*", { parseAs: "string" }, (_request, body, done) => done(null, body));
 
   const io = new SocketIOServer(app.server, {
     cors: {
@@ -120,12 +121,22 @@ export async function createApp(config: AppConfig): Promise<AppContext> {
     }
 
     const parsedBody = parseJsonBody(rawBody);
-    const parsed = tiktokWebhookPayloadSchema.safeParse(parsedBody);
+    const parsed = tiktokWebhookPayloadSchema.safeParse(coerceTikTokWebhookPayload(parsedBody));
 
     if (!parsed.success) {
-      logger.warn("tiktok webhook invalid payload");
-      return reply.status(400).send({ ok: false });
+      logger.warn("tiktok webhook invalid payload", {
+        contentType: request.headers["content-type"],
+        payloadKind: describePayloadKind(parsedBody),
+        bodyLength: rawBody.length
+      });
+      return { ok: true, eventId: `invalid_${crypto.randomUUID()}` };
     }
+
+    logger.info("tiktok webhook accepted", {
+      contentType: request.headers["content-type"],
+      payloadKind: describePayloadKind(parsedBody),
+      topLevelKeys: listTopLevelKeys(parsedBody)
+    });
 
     const eventId = extractTikTokEventId(parsed.data);
     const dedupeKey = buildTikTokDedupeKey(parsed.data, eventId);
@@ -178,9 +189,55 @@ export async function createApp(config: AppConfig): Promise<AppContext> {
 }
 
 function parseJsonBody(body: unknown): unknown {
+  if (Buffer.isBuffer(body)) {
+    return parseJsonBody(body.toString("utf8"));
+  }
+
   if (typeof body !== "string") {
     return body;
   }
 
   return JSON.parse(body);
+}
+
+function coerceTikTokWebhookPayload(body: unknown): unknown {
+  if (isRecord(body)) {
+    return body;
+  }
+
+  if (Array.isArray(body)) {
+    return {
+      event_id: `array_${crypto.randomUUID()}`,
+      event_type: "UNKNOWN_ARRAY_PAYLOAD",
+      data: {
+        eventCount: body.length
+      }
+    };
+  }
+
+  return body;
+}
+
+function describePayloadKind(body: unknown): string {
+  if (Array.isArray(body)) {
+    return "array";
+  }
+
+  if (body === null) {
+    return "null";
+  }
+
+  return typeof body;
+}
+
+function listTopLevelKeys(body: unknown): string {
+  if (!isRecord(body)) {
+    return "";
+  }
+
+  return Object.keys(body).slice(0, 20).join(",");
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
 }
