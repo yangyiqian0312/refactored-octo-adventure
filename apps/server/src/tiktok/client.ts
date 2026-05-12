@@ -234,10 +234,30 @@ function normalizeOrderDetail(orderId: string, order: Record<string, unknown>): 
     quantity
   };
 
+  const buyerInfo =
+    recordValue(order.buyer_info) ??
+    recordValue(order.buyerInfo) ??
+    recordValue(order.buyer) ??
+    recordValue(order.user);
   const buyerDisplayName =
     stringValue(order.buyer_user_name) ??
+    stringValue(order.buyer_username) ??
     stringValue(order.buyerUsername) ??
-    stringValue(order.buyer_display_name);
+    stringValue(order.buyer_display_name) ??
+    stringValue(order.buyerDisplayName) ??
+    stringValue(order.buyer_nickname) ??
+    stringValue(order.buyerNickname) ??
+    stringValue(order.username) ??
+    stringValue(order.user_name) ??
+    stringValue(order.userName) ??
+    (buyerInfo
+      ? stringValue(buyerInfo.username) ??
+        stringValue(buyerInfo.user_name) ??
+        stringValue(buyerInfo.userName) ??
+        stringValue(buyerInfo.nickname) ??
+        stringValue(buyerInfo.display_name) ??
+        stringValue(buyerInfo.displayName)
+      : undefined);
   const imageUrl =
     stringValue(firstLineItem.sku_image) ??
     stringValue(firstLineItem.skuImage) ??
@@ -281,6 +301,10 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 
 function arrayValue(value: unknown): unknown[] | undefined {
   return Array.isArray(value) ? value : undefined;
+}
+
+function recordValue(value: unknown): Record<string, unknown> | undefined {
+  return isRecord(value) ? value : undefined;
 }
 
 function stringValue(value: unknown): string | undefined {
