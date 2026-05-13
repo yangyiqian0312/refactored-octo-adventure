@@ -183,9 +183,9 @@ body {
   padding: 18px 22px;
   border: 4px solid #111820;
   background:
-    linear-gradient(135deg, rgba(255, 247, 214, 0.96), rgba(255, 238, 157, 0.92)),
-    repeating-linear-gradient(90deg, rgba(17, 24, 32, 0.06) 0 1px, transparent 1px 18px);
-  color: #111820;
+    linear-gradient(135deg, rgba(5, 8, 9, 0.88), rgba(8, 12, 13, 0.66)),
+    repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.06) 0 1px, transparent 1px 18px);
+  color: #ffffff;
   font-family: "Bebas Neue", Impact, sans-serif;
   font-size: clamp(28px, 3.1vw, 40px);
   line-height: 0.98;
@@ -193,7 +193,7 @@ body {
   text-transform: uppercase;
   overflow-wrap: anywhere;
   box-shadow:
-    0 0 0 4px #ffffff,
+    0 0 0 3px rgba(255, 255, 255, 0.86),
     7px 7px 0 rgba(0, 245, 212, 0.78),
     -7px -7px 0 rgba(255, 210, 63, 0.82),
     0 16px 32px rgba(0, 0, 0, 0.26);
@@ -222,17 +222,19 @@ body {
   top: 50%;
   width: 32px;
   height: 40px;
-  background: #fff7d6;
+  background: rgba(8, 12, 13, 0.86);
   border-right: 4px solid #111820;
   border-bottom: 4px solid #111820;
-  box-shadow: 4px 4px 0 #ffffff;
+  box-shadow:
+    3px 3px 0 rgba(255, 255, 255, 0.86),
+    7px 7px 0 rgba(0, 245, 212, 0.68);
   clip-path: polygon(0 0, 100% 50%, 0 100%);
   transform: translateY(-50%);
 }
 
 .alert-bubble span {
-  color: #ff3166;
-  text-shadow: 2px 2px 0 rgba(255, 210, 63, 0.85);
+  color: #00f5d4;
+  text-shadow: 2px 2px 0 rgba(0, 0, 0, 0.48);
 }
 
 .debug-indicator {
