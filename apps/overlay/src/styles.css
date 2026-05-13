@@ -175,7 +175,7 @@ body {
 .alert-bubble {
   position: absolute;
   left: 0;
-  bottom: 16px;
+  bottom: 28px;
   z-index: 1;
   width: min(340px, 38vw);
   min-height: 92px;
