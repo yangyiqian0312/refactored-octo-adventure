@@ -375,7 +375,7 @@ body {
   height: auto;
   image-rendering: pixelated;
   transform-origin: center center;
-  animation: starmie-rush 3.9s linear infinite;
+  animation: starmie-rush 2.4s linear infinite;
 }
 
 .status-dot {
