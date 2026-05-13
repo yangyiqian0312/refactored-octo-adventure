@@ -1,4 +1,5 @@
 import type { OrderAlert, OrderQueueItem } from "@live-alerts/shared";
+import type { CSSProperties } from "react";
 import { useEffect, useMemo, useState } from "react";
 import { enqueueAlert, popNextAlert } from "./alertQueue.js";
 import { useOrderSocket } from "./useOrderSocket.js";
@@ -20,6 +21,7 @@ function OrderOverlayApp() {
   const token = params.get("token") ?? "";
   const debug = params.get("debug") === "1";
   const demo = params.get("demo") === "1";
+  const themeStyle = useMemo(() => overlayThemeStyle(serverUrl), [serverUrl]);
   const { connectionState, latestAlert, pendingOrders, errorMessage } = useOrderSocket(serverUrl, token);
   const [queue, setQueue] = useState<OrderAlert[]>([]);
   const [currentAlert, setCurrentAlert] = useState<OrderAlert | undefined>();
@@ -83,7 +85,7 @@ function OrderOverlayApp() {
   }, [currentAlert]);
 
   return (
-    <main className="overlay-shell" aria-live="polite">
+    <main className="overlay-shell" style={themeStyle} aria-live="polite">
       {debug ? (
         <DebugIndicator
           connectionState={connectionState}
@@ -100,6 +102,18 @@ function OrderOverlayApp() {
       <PendingOrderQueue orders={pendingOrders} />
     </main>
   );
+}
+
+function overlayThemeStyle(serverUrl: string): CSSProperties {
+  if (serverUrl.includes("tiktok-shop-live-alert-server-5u57.onrender.com")) {
+    return {
+      "--overlay-accent": "#960018",
+      "--overlay-accent-shadow": "rgba(150, 0, 24, 0.55)",
+      "--overlay-accent-strong-shadow": "rgba(150, 0, 24, 0.6)"
+    } as CSSProperties;
+  }
+
+  return {};
 }
 
 function PendingOrderQueue({ orders }: { orders: OrderQueueItem[] }) {
