@@ -21,8 +21,8 @@ function OrderOverlayApp() {
   const token = params.get("token") ?? "";
   const debug = params.get("debug") === "1";
   const demo = params.get("demo") === "1";
-  const isStoreTwo = isStoreTwoServer(serverUrl);
-  const themeStyle = useMemo(() => overlayThemeStyle(serverUrl), [serverUrl]);
+  const isStoreTwo = isStoreTwoOverlay(serverUrl, token);
+  const themeStyle = useMemo(() => overlayThemeStyle(serverUrl, token), [serverUrl, token]);
   const runnerGif = isStoreTwo ? "/luffy-run.gif" : "/pikachu-run.gif";
   const { connectionState, latestAlert, pendingOrders, errorMessage } = useOrderSocket(serverUrl, token);
   const [queue, setQueue] = useState<OrderAlert[]>([]);
@@ -106,8 +106,8 @@ function OrderOverlayApp() {
   );
 }
 
-function overlayThemeStyle(serverUrl: string): CSSProperties {
-  if (isStoreTwoServer(serverUrl)) {
+function overlayThemeStyle(serverUrl: string, token: string): CSSProperties {
+  if (isStoreTwoOverlay(serverUrl, token)) {
     return {
       "--overlay-accent": "#960018",
       "--overlay-accent-shadow": "rgba(150, 0, 24, 0.55)",
@@ -123,8 +123,8 @@ function overlayThemeStyle(serverUrl: string): CSSProperties {
   return {};
 }
 
-function isStoreTwoServer(serverUrl: string): boolean {
-  return serverUrl.includes("tiktok-shop-live-alert-server-5u57.onrender.com");
+function isStoreTwoOverlay(serverUrl: string, token: string): boolean {
+  return serverUrl.includes("tiktok-shop-live-alert-server-5u57.onrender.com") || token === "otaku-overlay-token";
 }
 
 function PendingOrderQueue({ orders }: { orders: OrderQueueItem[] }) {
