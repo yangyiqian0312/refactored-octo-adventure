@@ -2,7 +2,7 @@
 
 :root {
   color: white;
-  background: transparent;
+  background: rgba(0, 0, 0, 0);
   font-family: "Manrope", sans-serif;
   font-synthesis: none;
   text-rendering: geometricPrecision;
@@ -19,7 +19,8 @@ body,
   height: 100%;
   margin: 0;
   overflow: hidden;
-  background: transparent;
+  background: rgba(0, 0, 0, 0) !important;
+  background-color: rgba(0, 0, 0, 0) !important;
 }
 
 body {
@@ -33,7 +34,8 @@ body {
   height: 100vh;
   min-height: 100vh;
   overflow: hidden;
-  background: transparent;
+  background: rgba(0, 0, 0, 0) !important;
+  background-color: rgba(0, 0, 0, 0) !important;
 }
 
 .alert-stage {
@@ -50,11 +52,11 @@ body {
 
 .pending-queue {
   position: absolute;
-  top: 18vh;
-  right: 6vw;
-  width: min(430px, 40vw);
+  top: calc(18vh + 190px);
+  right: calc(6vw - 5px);
+  width: min(300px, 30vw);
   transform: none;
-  padding: 16px 18px 18px;
+  padding: 12px 14px 14px;
   border: 3px solid rgba(255, 255, 255, 0.86);
   border-radius: 8px;
   background:
@@ -72,14 +74,14 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 14px;
-  margin-bottom: 10px;
+  gap: 10px;
+  margin-bottom: 8px;
 }
 
 .pending-queue__label {
   color: #00f5d4;
   font-family: "Bebas Neue", Impact, sans-serif;
-  font-size: 34px;
+  font-size: 30px;
   line-height: 1;
   letter-spacing: 0;
   text-transform: uppercase;
@@ -88,8 +90,8 @@ body {
 .pending-queue__count {
   display: grid;
   place-items: center;
-  min-width: 42px;
-  height: 34px;
+  min-width: 34px;
+  height: 28px;
   border: 2px solid #050809;
   background: #ffd23f;
   color: #050809;
@@ -116,10 +118,10 @@ body {
 
 .pending-queue__item {
   display: grid;
-  grid-template-columns: 34px minmax(0, 1fr);
+  grid-template-columns: 30px minmax(0, 1fr);
   align-items: center;
-  min-height: 42px;
-  padding: 5px 10px 5px 5px;
+  min-height: 36px;
+  padding: 4px 8px 4px 4px;
   border: 2px solid rgba(255, 255, 255, 0.28);
   background: rgba(255, 255, 255, 0.1);
   color: white;
@@ -129,12 +131,12 @@ body {
 .pending-queue__rank {
   display: grid;
   place-items: center;
-  width: 28px;
-  height: 28px;
+  width: 24px;
+  height: 24px;
   background: #ff3166;
   color: white;
   font-family: "Bebas Neue", Impact, sans-serif;
-  font-size: 22px;
+  font-size: 20px;
   line-height: 1;
 }
 
@@ -142,7 +144,7 @@ body {
   min-width: 0;
   overflow: hidden;
   color: #ffffff;
-  font-size: 22px;
+  font-size: 18px;
   font-weight: 800;
   line-height: 1.1;
   text-overflow: ellipsis;
@@ -443,10 +445,10 @@ body {
   }
 
   .pending-queue {
-    top: 16vh;
-    right: 4vw;
-    width: min(68vw, 390px);
-    padding: 12px;
+    top: calc(16vh + 190px);
+    right: calc(4vw - 5px);
+    width: min(54vw, 280px);
+    padding: 10px;
   }
 
   .pending-queue__label {
