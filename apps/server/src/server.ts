@@ -19,16 +19,9 @@ import {
   extractTikTokOrderId,
   extractTikTokShopId,
   extractTikTokOrderStatus,
-  normalizeTikTokOrderDetailsAlert,
   normalizeTikTokOrderAlert,
   shouldCreateAlertForTikTokStatus
 } from "./tiktok/normalizeOrder.js";
-import {
-  PlaceholderTikTokOrderClient,
-  TikTokApiError,
-  TikTokShopOrderClient,
-  type TikTokOrderClient
-} from "./tiktok/client.js";
 import { exchangeTikTokAuthCode, getTikTokAuthorizedShops } from "./tiktok/auth.js";
 import { tiktokWebhookPayloadSchema } from "./tiktok/types.js";
 import { verifyTikTokWebhookSignature } from "./tiktok/webhookVerifier.js";
@@ -46,9 +39,6 @@ export async function createApp(config: AppConfig): Promise<AppContext> {
   });
   const stores = new Map(config.stores.map((storeConfig) => [storeConfig.id, new InMemoryOrderStore()]));
   const primaryStore = stores.get("primary") ?? new InMemoryOrderStore();
-  const tiktokOrderClients = new Map(
-    config.stores.map((storeConfig) => [storeConfig.id, createTikTokOrderClient(config, storeConfig)])
-  );
 
   await app.register(cors, {
     origin: true,
@@ -298,7 +288,6 @@ export async function createApp(config: AppConfig): Promise<AppContext> {
         shopId,
         orderStatus,
         storeConfig,
-        tiktokOrderClient: getTikTokClient(tiktokOrderClients, storeConfig.id),
         store: targetStore,
         io
       });
@@ -411,16 +400,6 @@ function getStore(stores: Map<string, InMemoryOrderStore>, storeId: string): InM
   return store;
 }
 
-function getTikTokClient(clients: Map<string, TikTokOrderClient>, storeId: string): TikTokOrderClient {
-  const client = clients.get(storeId);
-
-  if (!client) {
-    throw new Error(`Unknown TikTok client ${storeId}`);
-  }
-
-  return client;
-}
-
 function roomForStore(storeId: string): string {
   return `store:${storeId}`;
 }
@@ -515,29 +494,6 @@ function escapeHtml(value: string): string {
     .replaceAll("'", "&#039;");
 }
 
-function createTikTokOrderClient(config: AppConfig, storeConfig: TikTokStoreConfig): TikTokOrderClient {
-  if (
-    config.tiktokAppKey &&
-    config.tiktokAppSecret &&
-    storeConfig.tiktokAccessToken &&
-    (storeConfig.tiktokShopId || storeConfig.tiktokShopCipher)
-  ) {
-    return new TikTokShopOrderClient({
-      baseUrl: config.tiktokApiBaseUrl,
-      authBaseUrl: config.tiktokAuthBaseUrl,
-      apiVersion: config.tiktokApiVersion,
-      appKey: config.tiktokAppKey,
-      appSecret: config.tiktokAppSecret,
-      accessToken: storeConfig.tiktokAccessToken,
-      refreshToken: storeConfig.tiktokRefreshToken,
-      shopId: storeConfig.tiktokShopId,
-      shopCipher: storeConfig.tiktokShopCipher ?? ""
-    });
-  }
-
-  return new PlaceholderTikTokOrderClient();
-}
-
 async function processTikTokWebhookEvent({
   payload,
   eventId,
@@ -545,7 +501,6 @@ async function processTikTokWebhookEvent({
   shopId,
   orderStatus,
   storeConfig,
-  tiktokOrderClient,
   store,
   io
 }: {
@@ -555,7 +510,6 @@ async function processTikTokWebhookEvent({
   shopId: string | undefined;
   orderStatus: string | undefined;
   storeConfig: TikTokStoreConfig;
-  tiktokOrderClient: TikTokOrderClient;
   store: InMemoryOrderStore;
   io: SocketIOServer;
 }): Promise<void> {
@@ -575,46 +529,24 @@ async function processTikTokWebhookEvent({
       return;
     }
 
-    logger.info("tiktok order detail lookup started", {
+    const alert = normalizeTikTokOrderAlert(payload) ?? orderAlertSchema.parse({
+      id: crypto.randomUUID(),
+      source: "tiktok",
+      orderId,
+      buyerDisplayName: "Someone",
+      productTitle: "TikTok Shop Order",
+      quantity: 1,
+      createdAt: new Date().toISOString(),
+      tier: "normal"
+    } satisfies OrderAlert);
+
+    logger.info("tiktok order alert created without detail lookup", {
       eventId,
       storeId: storeConfig.id,
       orderId,
       shopId,
-      orderStatus,
-      hasCredentials: storeConfig.hasTikTokCredentials
+      orderStatus
     });
-
-    const details = orderId ? await tiktokOrderClient.getOrderDetails(orderId) : undefined;
-    const alert = details
-      ? normalizeTikTokOrderDetailsAlert(details)
-      : normalizeTikTokOrderAlert(payload);
-
-    if (!alert) {
-      const shape = tiktokOrderClient.getLastOrderDetailShape();
-      if (orderId) {
-        store.upsertPendingOrder(orderQueueItemSchema.parse({
-          orderId,
-          buyerDisplayName: "Someone",
-          status: orderStatus ?? "AWAITING_SHIPMENT",
-          updatedAt: new Date().toISOString()
-        }));
-        io.to(roomForStore(storeConfig.id)).emit("order:queue", store.getPendingOrders());
-      }
-
-      logger.info("tiktok webhook stored without alert", {
-        eventId,
-        storeId: storeConfig.id,
-        orderId,
-        shopId,
-        orderStatus,
-        hasCredentials: storeConfig.hasTikTokCredentials,
-        hasOrderId: Boolean(orderId),
-        orderDetailDataKeys: shape?.dataKeys,
-        orderDetailOrderKeys: shape?.orderKeys,
-        orderDetailLineItemKeys: shape?.lineItemKeys
-      });
-      return;
-    }
 
     store.addAlert(alert);
     if (alert.orderId) {
@@ -642,23 +574,7 @@ async function processTikTokWebhookEvent({
       tier: alert.tier
     });
   } catch (error) {
-    if (error instanceof TikTokApiError) {
-      logger.error("tiktok order detail lookup failed", {
-        eventId,
-        storeId: storeConfig.id,
-        orderId,
-        shopId,
-        orderStatus,
-        errorName: error.name,
-        message: error.message,
-        statusCode: error.statusCode,
-        apiCode: error.apiCode,
-        requestId: error.requestId
-      });
-      return;
-    }
-
-    logger.error("tiktok order detail lookup failed", {
+    logger.error("tiktok webhook processing failed", {
       eventId,
       storeId: storeConfig.id,
       orderId,
