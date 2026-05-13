@@ -179,6 +179,17 @@ body {
   animation: pikachu-hop 0.46s steps(2, end) 1.7s infinite;
 }
 
+.order-alert--store2 {
+  width: min(470px, 54vw);
+  margin-right: min(350px, 35vw);
+}
+
+.order-alert--store2 .alert-pikachu {
+  right: 42px;
+  bottom: 0;
+  width: clamp(156px, 18vw, 220px);
+}
+
 .alert-bubble {
   position: absolute;
   left: 0;
@@ -510,6 +521,17 @@ body {
   .alert-pikachu {
     width: clamp(100px, 16vw, 132px);
     bottom: 6px;
+  }
+
+  .order-alert--store2 {
+    width: min(390px, 58vw);
+    margin-right: min(306px, 36vw);
+  }
+
+  .order-alert--store2 .alert-pikachu {
+    right: 28px;
+    bottom: 0;
+    width: clamp(132px, 22vw, 180px);
   }
 
   .alert-bubble {

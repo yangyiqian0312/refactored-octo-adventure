@@ -98,7 +98,14 @@ function OrderOverlayApp() {
       ) : null}
 
       <section className="alert-stage">
-        {currentAlert ? <OrderAlertCard alert={currentAlert} runnerGif={runnerGif} key={currentAlert.id} /> : null}
+        {currentAlert ? (
+          <OrderAlertCard
+            alert={currentAlert}
+            runnerGif={runnerGif}
+            variant={isStoreTwo ? "store2" : "default"}
+            key={currentAlert.id}
+          />
+        ) : null}
       </section>
 
       <PendingOrderQueue orders={pendingOrders} />
@@ -152,9 +159,17 @@ function PendingOrderQueue({ orders }: { orders: OrderQueueItem[] }) {
   );
 }
 
-function OrderAlertCard({ alert, runnerGif }: { alert: OrderAlert; runnerGif: string }) {
+function OrderAlertCard({
+  alert,
+  runnerGif,
+  variant
+}: {
+  alert: OrderAlert;
+  runnerGif: string;
+  variant: "default" | "store2";
+}) {
   return (
-    <article className={`order-alert order-alert--${alert.tier}`}>
+    <article className={`order-alert order-alert--${alert.tier} order-alert--${variant}`}>
       <div className="alert-bubble">
         <span>{alert.buyerDisplayName}</span> just ordered!
       </div>
