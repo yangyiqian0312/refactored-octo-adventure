@@ -4,12 +4,14 @@ import { enqueueAlert, popNextAlert } from "./alertQueue.js";
 import { useOrderSocket } from "./useOrderSocket.js";
 
 const DISPLAY_MS = 4300;
+const DEMO_NAMES = ["nichoooooooole", "dannyboy1097", "m***23", "PackPalaceFan", "charizardpulls"];
 
 export function App() {
   const params = useMemo(() => new URLSearchParams(window.location.search), []);
   const serverUrl = params.get("server") ?? "http://localhost:3001";
   const token = params.get("token") ?? "";
   const debug = params.get("debug") === "1";
+  const demo = params.get("demo") === "1";
   const { connectionState, latestAlert, pendingOrders, errorMessage } = useOrderSocket(serverUrl, token);
   const [queue, setQueue] = useState<OrderAlert[]>([]);
   const [currentAlert, setCurrentAlert] = useState<OrderAlert | undefined>();
@@ -19,6 +21,36 @@ export function App() {
       setQueue((existing) => enqueueAlert(existing, latestAlert));
     }
   }, [latestAlert]);
+
+  useEffect(() => {
+    if (!demo) {
+      return;
+    }
+
+    let demoIndex = 0;
+    const pushDemoAlert = () => {
+      const buyerDisplayName = DEMO_NAMES[demoIndex % DEMO_NAMES.length] ?? "Someone";
+      demoIndex += 1;
+
+      setQueue((existing) =>
+        enqueueAlert(existing, {
+          id: `demo-${Date.now()}-${demoIndex}`,
+          source: "test",
+          orderId: `demo-order-${demoIndex}`,
+          buyerDisplayName,
+          productTitle: "Demo Order",
+          quantity: 1,
+          createdAt: new Date().toISOString(),
+          tier: "normal"
+        })
+      );
+    };
+
+    pushDemoAlert();
+    const intervalId = window.setInterval(pushDemoAlert, 5800);
+
+    return () => window.clearInterval(intervalId);
+  }, [demo]);
 
   useEffect(() => {
     if (currentAlert || queue.length === 0) {
@@ -90,26 +122,10 @@ function PendingOrderQueue({ orders }: { orders: OrderQueueItem[] }) {
 function OrderAlertCard({ alert }: { alert: OrderAlert }) {
   return (
     <article className={`order-alert order-alert--${alert.tier}`}>
-      <div className="alert-ribbon">{labelForTier(alert.tier)}</div>
-      <div className="alert-image-wrap">
-        {alert.imageUrl ? (
-          <img className="alert-image" src={alert.imageUrl} alt="" />
-        ) : (
-          <div className="alert-image-fallback">BUY</div>
-        )}
+      <img className="alert-pikachu" src="/pikachu-run.gif" alt="" />
+      <div className="alert-bubble">
+        <span>{alert.buyerDisplayName}</span> just ordered!
       </div>
-      <div className="alert-copy">
-        <p className="alert-kicker">TikTok Shop Order</p>
-        <h1>
-          <span>{alert.buyerDisplayName}</span> just bought{" "}
-          <strong>
-            {alert.quantity}x {alert.productTitle}
-          </strong>
-        </h1>
-      </div>
-      <div className="spark spark-a" />
-      <div className="spark spark-b" />
-      <div className="spark spark-c" />
     </article>
   );
 }
@@ -134,16 +150,4 @@ function DebugIndicator({
       {errorMessage ? <span>{errorMessage}</span> : null}
     </aside>
   );
-}
-
-function labelForTier(tier: OrderAlert["tier"]): string {
-  if (tier === "mega") {
-    return "MEGA DROP";
-  }
-
-  if (tier === "large") {
-    return "BIG CART";
-  }
-
-  return "NEW ORDER";
 }
