@@ -244,18 +244,18 @@ body {
 
 .big-order-alert {
   position: absolute;
-  top: calc(18vh + 158px);
+  top: 18vh;
   left: 0;
   width: 100vw;
-  height: 220px;
+  height: 58vh;
   animation: big-order-cycle 5.2s linear infinite;
 }
 
 .big-order-panel {
   position: absolute;
-  top: 44px;
-  left: 7vw;
-  width: min(520px, 46vw);
+  left: 50%;
+  bottom: 3vh;
+  width: min(720px, 76vw);
   min-height: 126px;
   padding: 16px 22px;
   border: 3px solid rgba(255, 255, 255, 0.9);
@@ -268,6 +268,7 @@ body {
     10px 10px 0 rgba(0, 245, 212, 0.6),
     -10px -10px 0 rgba(255, 210, 63, 0.68);
   animation: warning-panel-pop 5.2s steps(8, end) infinite;
+  transform: translateX(-50%);
 }
 
 .big-order-kicker {
@@ -301,10 +302,10 @@ body {
 
 .big-order-charizard {
   position: absolute;
-  top: 46px;
-  left: 47vw;
+  top: 50%;
+  left: 50%;
   z-index: 2;
-  width: clamp(160px, 20vw, 250px);
+  width: clamp(360px, 52vw, 760px);
   height: auto;
   image-rendering: auto;
   transform-origin: 70% 50%;
@@ -324,15 +325,15 @@ body {
 }
 
 .big-order-streak--a {
-  top: 96px;
-  left: 34vw;
-  width: 240px;
+  top: 36%;
+  left: 7vw;
+  width: 42vw;
 }
 
 .big-order-streak--b {
-  top: 146px;
-  left: 38vw;
-  width: 170px;
+  top: 53%;
+  left: 16vw;
+  width: 30vw;
   animation-delay: 0.08s;
 }
 
@@ -442,16 +443,16 @@ body {
 
 @keyframes charizard-surge {
   0% {
-    transform: translateX(-56vw) translateY(18px) scale(0.9) rotate(-4deg);
+    transform: translateX(-126vw) translateY(-42%) scale(0.94) rotate(-5deg);
   }
   28% {
-    transform: translateX(0) translateY(0) scale(1) rotate(0deg);
+    transform: translateX(-50%) translateY(-50%) scale(1) rotate(0deg);
   }
   74% {
-    transform: translateX(0) translateY(-5px) scale(1.02) rotate(-1deg);
+    transform: translateX(-50%) translateY(-53%) scale(1.05) rotate(-1deg);
   }
   100% {
-    transform: translateX(34vw) translateY(-18px) scale(1.04) rotate(3deg);
+    transform: translateX(76vw) translateY(-62%) scale(1.04) rotate(4deg);
   }
 }
 
@@ -535,30 +536,31 @@ body {
   }
 
   .big-order-alert {
-    top: calc(16vh + 158px);
-    height: 180px;
+    top: 18vh;
+    height: 54vh;
   }
 
   .big-order-panel {
-    left: 6vw;
-    width: min(330px, 54vw);
+    left: 50%;
+    bottom: 2vh;
+    width: min(500px, 76vw);
     min-height: 104px;
     padding: 13px 16px;
   }
 
   .big-order-charizard {
-    top: 54px;
-    left: 54vw;
-    width: clamp(116px, 24vw, 170px);
+    top: 45%;
+    left: 50%;
+    width: clamp(300px, 62vw, 520px);
   }
 
   .big-order-streak--a {
-    left: 34vw;
-    width: 140px;
+    left: 4vw;
+    width: 42vw;
   }
 
   .big-order-streak--b {
-    left: 39vw;
-    width: 100px;
+    left: 12vw;
+    width: 32vw;
   }
 }
