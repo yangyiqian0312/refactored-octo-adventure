@@ -203,9 +203,7 @@ function StarmieTestPage() {
   return (
     <main className="starmie-test" aria-live="polite">
       <section className="starmie-burst">
-        <div className="starmie-rings" />
         <img className="starmie-burst__sprite" src="/mega-starmie.gif" alt="" />
-        <div className="starmie-flash" />
       </section>
     </main>
   );
