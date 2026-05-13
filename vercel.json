@@ -19,6 +19,14 @@
     {
       "source": "/big-order-test/:path*",
       "destination": "/index.html"
+    },
+    {
+      "source": "/starmie-test",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/starmie-test/:path*",
+      "destination": "/index.html"
     }
   ]
 }

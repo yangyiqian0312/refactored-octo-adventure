@@ -353,6 +353,74 @@ body {
   animation-delay: 0.08s;
 }
 
+.starmie-test {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  background: rgba(0, 0, 0, 0) !important;
+  pointer-events: none;
+}
+
+.starmie-burst {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  perspective: 900px;
+}
+
+.starmie-burst__sprite {
+  width: clamp(160px, 18vw, 260px);
+  height: auto;
+  image-rendering: pixelated;
+  transform-origin: center center;
+  animation: starmie-rush 4.8s cubic-bezier(0.12, 0.74, 0.18, 1) infinite;
+  filter:
+    drop-shadow(0 0 18px rgba(150, 120, 255, 0.52))
+    drop-shadow(0 0 42px rgba(255, 255, 255, 0.24));
+}
+
+.starmie-rings,
+.starmie-rings::before,
+.starmie-rings::after {
+  position: absolute;
+  width: 210px;
+  height: 210px;
+  border: 5px solid rgba(168, 150, 255, 0.72);
+  border-radius: 999px;
+  opacity: 0;
+  transform: scale(0.1);
+  animation: starmie-ring 4.8s ease-out infinite;
+}
+
+.starmie-rings {
+  box-shadow: 0 0 34px rgba(168, 150, 255, 0.48);
+}
+
+.starmie-rings::before,
+.starmie-rings::after {
+  content: "";
+  inset: 0;
+  margin: auto;
+}
+
+.starmie-rings::before {
+  animation-delay: 0.22s;
+}
+
+.starmie-rings::after {
+  animation-delay: 0.44s;
+}
+
+.starmie-flash {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.7), transparent 42%);
+  opacity: 0;
+  animation: starmie-flash 4.8s ease-out infinite;
+}
+
 .status-dot {
   width: 10px;
   height: 10px;
@@ -505,6 +573,70 @@ body {
   }
 }
 
+@keyframes starmie-rush {
+  0% {
+    opacity: 0;
+    transform: translateZ(-900px) scale(0.02) rotate(-34deg);
+  }
+  16% {
+    opacity: 0;
+    transform: translateZ(-820px) scale(0.04) rotate(-28deg);
+  }
+  28% {
+    opacity: 1;
+    transform: translateZ(-560px) scale(0.22) rotate(-18deg);
+  }
+  55% {
+    opacity: 1;
+    transform: translateZ(0) scale(1.45) rotate(4deg);
+  }
+  74% {
+    opacity: 1;
+    transform: translateZ(220px) scale(3.7) rotate(14deg);
+  }
+  86% {
+    opacity: 0.96;
+    transform: translateZ(420px) scale(7.2) rotate(20deg);
+  }
+  100% {
+    opacity: 0;
+    transform: translateZ(520px) scale(10.5) rotate(24deg);
+  }
+}
+
+@keyframes starmie-ring {
+  0%,
+  24% {
+    opacity: 0;
+    transform: scale(0.1);
+  }
+  38% {
+    opacity: 0.9;
+  }
+  82% {
+    opacity: 0;
+    transform: scale(4.5);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(5);
+  }
+}
+
+@keyframes starmie-flash {
+  0%,
+  66% {
+    opacity: 0;
+  }
+  74% {
+    opacity: 0.26;
+  }
+  82%,
+  100% {
+    opacity: 0;
+  }
+}
+
 @media (max-width: 760px) {
   .alert-stage {
     width: 100vw;
@@ -589,5 +721,9 @@ body {
   .big-order-streak--b {
     left: 12vw;
     width: 32vw;
+  }
+
+  .starmie-burst__sprite {
+    width: clamp(140px, 28vw, 220px);
   }
 }

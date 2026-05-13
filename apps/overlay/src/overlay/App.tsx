@@ -12,6 +12,10 @@ export function App() {
     return <BigOrderTestPage />;
   }
 
+  if (window.location.pathname === "/starmie-test") {
+    return <StarmieTestPage />;
+  }
+
   return <OrderOverlayApp />;
 }
 
@@ -190,6 +194,18 @@ function BigOrderTestPage() {
         <img className="big-order-charizard" src="/charizard-fly.gif" alt="" />
         <div className="big-order-streak big-order-streak--a" />
         <div className="big-order-streak big-order-streak--b" />
+      </section>
+    </main>
+  );
+}
+
+function StarmieTestPage() {
+  return (
+    <main className="starmie-test" aria-live="polite">
+      <section className="starmie-burst">
+        <div className="starmie-rings" />
+        <img className="starmie-burst__sprite" src="/mega-starmie.gif" alt="" />
+        <div className="starmie-flash" />
       </section>
     </main>
   );
