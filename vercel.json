@@ -11,6 +11,14 @@
     {
       "source": "/overlay/:path*",
       "destination": "/index.html"
+    },
+    {
+      "source": "/big-order-test",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/big-order-test/:path*",
+      "destination": "/index.html"
     }
   ]
 }

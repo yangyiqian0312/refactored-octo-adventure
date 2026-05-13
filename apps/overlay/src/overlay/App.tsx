@@ -7,6 +7,14 @@ const DISPLAY_MS = 4300;
 const DEMO_NAMES = ["nichoooooooole", "dannyboy1097", "m***23", "PackPalaceFan", "charizardpulls"];
 
 export function App() {
+  if (window.location.pathname === "/big-order-test") {
+    return <BigOrderTestPage />;
+  }
+
+  return <OrderOverlayApp />;
+}
+
+function OrderOverlayApp() {
   const params = useMemo(() => new URLSearchParams(window.location.search), []);
   const serverUrl = params.get("server") ?? "http://localhost:3001";
   const token = params.get("token") ?? "";
@@ -127,6 +135,23 @@ function OrderAlertCard({ alert }: { alert: OrderAlert }) {
       </div>
       <img className="alert-pikachu" src="/pikachu-run.gif" alt="" />
     </article>
+  );
+}
+
+function BigOrderTestPage() {
+  return (
+    <main className="big-order-test" aria-live="polite">
+      <section className="big-order-alert">
+        <div className="big-order-panel">
+          <p className="big-order-kicker">WARNING</p>
+          <h1>BIG ORDER INCOMING</h1>
+          <p className="big-order-subtitle">Brace for the pull</p>
+        </div>
+        <img className="big-order-charizard" src="/charizard-fly.gif" alt="" />
+        <div className="big-order-streak big-order-streak--a" />
+        <div className="big-order-streak big-order-streak--b" />
+      </section>
+    </main>
   );
 }
 
