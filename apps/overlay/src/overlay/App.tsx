@@ -122,10 +122,10 @@ function PendingOrderQueue({ orders }: { orders: OrderQueueItem[] }) {
 function OrderAlertCard({ alert }: { alert: OrderAlert }) {
   return (
     <article className={`order-alert order-alert--${alert.tier}`}>
-      <img className="alert-pikachu" src="/pikachu-run.gif" alt="" />
       <div className="alert-bubble">
         <span>{alert.buyerDisplayName}</span> just ordered!
       </div>
+      <img className="alert-pikachu" src="/pikachu-run.gif" alt="" />
     </article>
   );
 }

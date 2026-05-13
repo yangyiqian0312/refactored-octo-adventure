@@ -40,13 +40,12 @@ body {
 
 .alert-stage {
   position: absolute;
-  left: 50%;
+  left: 0;
   bottom: 9vh;
-  width: min(980px, calc(100vw - 64px));
-  min-height: 360px;
-  transform: translateX(-50%);
+  width: 100vw;
+  min-height: 380px;
   display: grid;
-  place-items: end start;
+  place-items: end center;
   pointer-events: none;
 }
 
@@ -154,46 +153,48 @@ body {
 
 .order-alert {
   position: relative;
-  width: min(880px, 92vw);
-  min-height: 300px;
-  animation: alert-out 0.42s steps(6, end) 3.84s forwards;
+  width: min(1040px, 96vw);
+  min-height: 360px;
+  animation: order-run-in 0.82s steps(10, end) both,
+    alert-out 0.42s steps(6, end) 3.84s forwards;
 }
 
 .alert-pikachu {
   position: absolute;
-  left: 0;
-  bottom: 0;
+  right: 0;
+  bottom: 18px;
   z-index: 2;
-  width: clamp(210px, 30vw, 330px);
+  width: clamp(260px, 36vw, 420px);
   height: auto;
   image-rendering: pixelated;
   filter: drop-shadow(10px 14px 0 rgba(0, 0, 0, 0.28));
   transform-origin: center bottom;
-  animation: pikachu-run-in 0.82s steps(8, end) both,
-    pikachu-hop 0.46s steps(2, end) 0.82s infinite;
+  animation: pikachu-hop 0.46s steps(2, end) 0.82s infinite;
 }
 
 .alert-bubble {
   position: absolute;
-  left: clamp(190px, 27vw, 310px);
-  bottom: clamp(86px, 10vw, 132px);
+  left: 0;
+  bottom: 56px;
   z-index: 1;
-  max-width: min(540px, 58vw);
-  min-width: 320px;
-  padding: 22px 28px;
+  width: min(620px, 58vw);
+  min-height: 210px;
+  padding: 44px 48px;
   border: 6px solid #111820;
-  background: #fff7d6;
+  background:
+    linear-gradient(135deg, rgba(255, 247, 214, 0.96), rgba(255, 238, 157, 0.92)),
+    repeating-linear-gradient(90deg, rgba(17, 24, 32, 0.06) 0 1px, transparent 1px 18px);
   color: #111820;
   font-family: "Bebas Neue", Impact, sans-serif;
-  font-size: clamp(38px, 5vw, 62px);
+  font-size: clamp(46px, 5.3vw, 72px);
   line-height: 0.98;
   letter-spacing: 0;
   text-transform: uppercase;
   overflow-wrap: anywhere;
   box-shadow:
     0 0 0 6px #ffffff,
-    12px 12px 0 rgba(0, 245, 212, 0.78),
-    -10px -10px 0 rgba(255, 210, 63, 0.82),
+    14px 14px 0 rgba(0, 245, 212, 0.78),
+    -12px -12px 0 rgba(255, 210, 63, 0.82),
     0 22px 42px rgba(0, 0, 0, 0.28);
   clip-path: polygon(
     0 10px,
@@ -210,21 +211,22 @@ body {
     0 calc(100% - 10px)
   );
   transform-origin: left center;
-  animation: bubble-pop 0.38s steps(5, end) 0.64s both;
+  animation: bubble-pop 0.28s steps(4, end) 0.7s both;
 }
 
 .alert-bubble::before {
   content: "";
   position: absolute;
-  left: -34px;
-  bottom: 32px;
-  width: 34px;
-  height: 34px;
+  right: -48px;
+  top: 50%;
+  width: 50px;
+  height: 62px;
   background: #fff7d6;
-  border-left: 6px solid #111820;
+  border-right: 6px solid #111820;
   border-bottom: 6px solid #111820;
-  box-shadow: -6px 6px 0 #ffffff;
-  clip-path: polygon(0 100%, 100% 0, 100% 100%);
+  box-shadow: 6px 6px 0 #ffffff;
+  clip-path: polygon(0 0, 100% 50%, 0 100%);
+  transform: translateY(-50%);
 }
 
 .alert-bubble span {
@@ -266,18 +268,18 @@ body {
   background: #ff3166;
 }
 
-@keyframes pikachu-run-in {
+@keyframes order-run-in {
   0% {
     opacity: 0;
-    transform: translateX(-380px) translateY(20px) scale(0.92);
+    transform: translateX(-112vw);
   }
   72% {
     opacity: 1;
-    transform: translateX(18px) translateY(-8px) scale(1.02);
+    transform: translateX(18px);
   }
   100% {
     opacity: 1;
-    transform: translateX(0) translateY(0) scale(1);
+    transform: translateX(0);
   }
 }
 
@@ -294,15 +296,15 @@ body {
 @keyframes bubble-pop {
   0% {
     opacity: 0;
-    transform: translateX(-20px) scale(0.72);
+    transform: scale(0.86);
   }
   80% {
     opacity: 1;
-    transform: translateX(0) scale(1.06);
+    transform: scale(1.03);
   }
   100% {
     opacity: 1;
-    transform: translateX(0) scale(1);
+    transform: scale(1);
   }
 }
 
@@ -337,28 +339,28 @@ body {
 
 @media (max-width: 760px) {
   .alert-stage {
-    width: min(94vw, 640px);
-    min-height: 260px;
+    width: 100vw;
+    min-height: 300px;
     bottom: 7vh;
   }
 
   .order-alert {
-    width: 100%;
-    min-height: 240px;
+    width: min(700px, 96vw);
+    min-height: 280px;
   }
 
   .alert-pikachu {
-    width: clamp(170px, 40vw, 230px);
+    width: clamp(190px, 40vw, 260px);
+    bottom: 18px;
   }
 
   .alert-bubble {
-    left: clamp(150px, 35vw, 210px);
-    bottom: 88px;
-    min-width: 230px;
-    max-width: min(390px, 58vw);
-    padding: 16px 18px;
+    bottom: 72px;
+    width: min(390px, 58vw);
+    min-height: 150px;
+    padding: 24px 26px;
     border-width: 5px;
-    font-size: clamp(30px, 7vw, 42px);
+    font-size: clamp(34px, 7vw, 46px);
   }
 
   .pending-queue {
