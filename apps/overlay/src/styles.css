@@ -9,6 +9,12 @@
   --overlay-accent: #00f5d4;
   --overlay-accent-shadow: rgba(0, 245, 212, 0.55);
   --overlay-accent-strong-shadow: rgba(0, 245, 212, 0.6);
+  --overlay-panel-background:
+    linear-gradient(135deg, rgba(5, 8, 9, 0.74), rgba(8, 12, 13, 0.56)),
+    repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.06) 0 1px, transparent 1px 18px);
+  --overlay-primary-text: #ffffff;
+  --overlay-secondary-text: rgba(255, 255, 255, 0.86);
+  --overlay-text-shadow: 0 3px 0 rgba(0, 0, 0, 0.32);
 }
 
 * {
@@ -61,9 +67,7 @@ body {
   padding: 12px 14px 14px;
   border: 3px solid rgba(255, 255, 255, 0.86);
   border-radius: 8px;
-  background:
-    linear-gradient(135deg, rgba(5, 8, 9, 0.74), rgba(8, 12, 13, 0.56)),
-    repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.06) 0 1px, transparent 1px 18px);
+  background: var(--overlay-panel-background);
   box-shadow:
     0 18px 54px rgba(0, 0, 0, 0.32),
     8px 8px 0 var(--overlay-accent-shadow),
@@ -111,11 +115,11 @@ body {
 
 .pending-queue__empty {
   margin: 0;
-  color: rgba(255, 255, 255, 0.86);
+  color: var(--overlay-secondary-text);
   font-size: 22px;
   font-weight: 800;
   line-height: 1.1;
-  text-shadow: 0 3px 0 rgba(0, 0, 0, 0.32);
+  text-shadow: var(--overlay-text-shadow);
 }
 
 .pending-queue__item {
@@ -145,13 +149,13 @@ body {
 .pending-queue__name {
   min-width: 0;
   overflow: hidden;
-  color: #ffffff;
+  color: var(--overlay-primary-text);
   font-size: 18px;
   font-weight: 800;
   line-height: 1.1;
   text-overflow: ellipsis;
   white-space: nowrap;
-  text-shadow: 0 3px 0 rgba(0, 0, 0, 0.32);
+  text-shadow: var(--overlay-text-shadow);
 }
 
 .order-alert {
@@ -185,10 +189,8 @@ body {
   padding: 16px 20px;
   border: 3px solid rgba(255, 255, 255, 0.86);
   border-radius: 8px;
-  background:
-    linear-gradient(135deg, rgba(5, 8, 9, 0.74), rgba(8, 12, 13, 0.56)),
-    repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.06) 0 1px, transparent 1px 18px);
-  color: #ffffff;
+  background: var(--overlay-panel-background);
+  color: var(--overlay-primary-text);
   font-family: "Bebas Neue", Impact, sans-serif;
   font-size: clamp(26px, 3vw, 38px);
   line-height: 0.98;
@@ -215,7 +217,7 @@ body {
   position: relative;
   z-index: 1;
   color: var(--overlay-accent);
-  text-shadow: 0 3px 0 rgba(0, 0, 0, 0.32);
+  text-shadow: var(--overlay-text-shadow);
 }
 
 .debug-indicator {

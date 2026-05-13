@@ -21,7 +21,9 @@ function OrderOverlayApp() {
   const token = params.get("token") ?? "";
   const debug = params.get("debug") === "1";
   const demo = params.get("demo") === "1";
+  const isStoreTwo = isStoreTwoServer(serverUrl);
   const themeStyle = useMemo(() => overlayThemeStyle(serverUrl), [serverUrl]);
+  const runnerGif = isStoreTwo ? "/luffy-run.gif" : "/pikachu-run.gif";
   const { connectionState, latestAlert, pendingOrders, errorMessage } = useOrderSocket(serverUrl, token);
   const [queue, setQueue] = useState<OrderAlert[]>([]);
   const [currentAlert, setCurrentAlert] = useState<OrderAlert | undefined>();
@@ -96,7 +98,7 @@ function OrderOverlayApp() {
       ) : null}
 
       <section className="alert-stage">
-        {currentAlert ? <OrderAlertCard alert={currentAlert} key={currentAlert.id} /> : null}
+        {currentAlert ? <OrderAlertCard alert={currentAlert} runnerGif={runnerGif} key={currentAlert.id} /> : null}
       </section>
 
       <PendingOrderQueue orders={pendingOrders} />
@@ -105,15 +107,24 @@ function OrderOverlayApp() {
 }
 
 function overlayThemeStyle(serverUrl: string): CSSProperties {
-  if (serverUrl.includes("tiktok-shop-live-alert-server-5u57.onrender.com")) {
+  if (isStoreTwoServer(serverUrl)) {
     return {
       "--overlay-accent": "#960018",
       "--overlay-accent-shadow": "rgba(150, 0, 24, 0.55)",
-      "--overlay-accent-strong-shadow": "rgba(150, 0, 24, 0.6)"
+      "--overlay-accent-strong-shadow": "rgba(150, 0, 24, 0.6)",
+      "--overlay-panel-background":
+        "linear-gradient(135deg, rgba(242, 242, 242, 0.92), rgba(214, 214, 214, 0.84)), repeating-linear-gradient(90deg, rgba(17, 24, 32, 0.05) 0 1px, transparent 1px 18px)",
+      "--overlay-primary-text": "#202327",
+      "--overlay-secondary-text": "rgba(32, 35, 39, 0.88)",
+      "--overlay-text-shadow": "none"
     } as CSSProperties;
   }
 
   return {};
+}
+
+function isStoreTwoServer(serverUrl: string): boolean {
+  return serverUrl.includes("tiktok-shop-live-alert-server-5u57.onrender.com");
 }
 
 function PendingOrderQueue({ orders }: { orders: OrderQueueItem[] }) {
@@ -141,13 +152,13 @@ function PendingOrderQueue({ orders }: { orders: OrderQueueItem[] }) {
   );
 }
 
-function OrderAlertCard({ alert }: { alert: OrderAlert }) {
+function OrderAlertCard({ alert, runnerGif }: { alert: OrderAlert; runnerGif: string }) {
   return (
     <article className={`order-alert order-alert--${alert.tier}`}>
       <div className="alert-bubble">
         <span>{alert.buyerDisplayName}</span> just ordered!
       </div>
-      <img className="alert-pikachu" src="/pikachu-run.gif" alt="" />
+      <img className="alert-pikachu" src={runnerGif} alt="" />
     </article>
   );
 }
