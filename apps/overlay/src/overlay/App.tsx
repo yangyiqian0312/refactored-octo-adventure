@@ -141,7 +141,7 @@ function isStoreTwoOverlay(serverUrl: string, token: string): boolean {
 }
 
 function shouldUseBigOrderAlert(alert: OrderAlert, isStoreTwo: boolean): boolean {
-  return !isStoreTwo && (alert.orderTotalAmount ?? 0) >= 200;
+  return !isStoreTwo && (alert.orderTotalAmount ?? 0) >= 500;
 }
 
 function PendingOrderQueue({ orders }: { orders: OrderQueueItem[] }) {
