@@ -214,8 +214,8 @@ function StarmieTestPage() {
             playsInline
             onLoadedMetadata={(event) => {
               const video = event.currentTarget;
-              if (Number.isFinite(video.duration) && video.duration > 1.2) {
-                video.playbackRate = video.duration / (video.duration - 1);
+              if (Number.isFinite(video.duration) && video.duration > 0.7) {
+                video.playbackRate = video.duration / (video.duration - 0.5);
               }
             }}
             onEnded={() => setIsVisible(false)}
