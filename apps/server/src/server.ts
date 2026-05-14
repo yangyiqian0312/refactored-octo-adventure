@@ -105,6 +105,8 @@ export async function createApp(config: AppConfig): Promise<AppContext> {
         productTitle: input.productTitle,
         quantity: input.quantity,
         imageUrl: input.imageUrl,
+        orderTotalAmount: input.orderTotalAmount,
+        orderTotalCurrency: input.orderTotalCurrency,
         createdAt: new Date().toISOString(),
         tier: calculateOrderTier(input.quantity)
       } satisfies OrderAlert);

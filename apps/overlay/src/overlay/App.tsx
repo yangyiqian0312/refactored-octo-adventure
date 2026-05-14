@@ -102,7 +102,9 @@ function OrderOverlayApp() {
       ) : null}
 
       <section className="alert-stage">
-        {currentAlert ? (
+        {currentAlert && shouldUseBigOrderAlert(currentAlert, isStoreTwo) ? (
+          <BigOrderAlertCard alert={currentAlert} key={currentAlert.id} />
+        ) : currentAlert ? (
           <OrderAlertCard
             alert={currentAlert}
             runnerGif={runnerGif}
@@ -136,6 +138,10 @@ function overlayThemeStyle(serverUrl: string, token: string): CSSProperties {
 
 function isStoreTwoOverlay(serverUrl: string, token: string): boolean {
   return serverUrl.includes("tiktok-shop-live-alert-server-5u57.onrender.com") || token === "otaku-overlay-token";
+}
+
+function shouldUseBigOrderAlert(alert: OrderAlert, isStoreTwo: boolean): boolean {
+  return !isStoreTwo && (alert.orderTotalAmount ?? 0) >= 200;
 }
 
 function PendingOrderQueue({ orders }: { orders: OrderQueueItem[] }) {
@@ -178,6 +184,36 @@ function OrderAlertCard({
         <span>{alert.buyerDisplayName}</span> just ordered!
       </div>
       <img className="alert-pikachu" src={runnerGif} alt="" />
+    </article>
+  );
+}
+
+function BigOrderAlertCard({ alert }: { alert: OrderAlert }) {
+  const [isVisible, setIsVisible] = useState(true);
+
+  return (
+    <article className="order-alert-big">
+      {isVisible ? (
+        <>
+          <div className="order-alert-big__toast">
+            <span>{alert.buyerDisplayName}</span> just ordered!
+          </div>
+          <video
+            className="order-alert-big__runner"
+            src="/person-run-transparent.webm"
+            autoPlay
+            muted
+            playsInline
+            onLoadedMetadata={(event) => {
+              const video = event.currentTarget;
+              if (Number.isFinite(video.duration) && video.duration > 0.7) {
+                video.playbackRate = video.duration / (video.duration - 0.5);
+              }
+            }}
+            onEnded={() => setIsVisible(false)}
+          />
+        </>
+      ) : null}
     </article>
   );
 }

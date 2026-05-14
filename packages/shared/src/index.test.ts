@@ -10,11 +10,14 @@ describe("OrderAlert schema", () => {
       productTitle: "Pokemon Booster Pack",
       quantity: 3,
       imageUrl: "https://placehold.co/300x300",
+      orderTotalAmount: 240,
+      orderTotalCurrency: "USD",
       createdAt: new Date().toISOString(),
       tier: "large"
     });
 
     expect(alert.productTitle).toBe("Pokemon Booster Pack");
+    expect(alert.orderTotalAmount).toBe(240);
   });
 
   it("rejects non-positive quantities", () => {

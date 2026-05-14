@@ -7,6 +7,8 @@ export type TikTokOrderDetails = {
   productTitle: string;
   quantity: number;
   imageUrl?: string;
+  orderTotalAmount?: number;
+  orderTotalCurrency?: string;
 };
 
 export type TikTokOrderDetailShape = {
@@ -272,6 +274,49 @@ function normalizeOrderDetail(orderId: string, order: Record<string, unknown>): 
     details.imageUrl = imageUrl;
   }
 
+  const paymentInfo =
+    recordValue(order.payment) ??
+    recordValue(order.payment_info) ??
+    recordValue(order.paymentInfo) ??
+    recordValue(order.price_detail) ??
+    recordValue(order.priceDetail);
+  const orderTotalAmount =
+    moneyValue(order.total_amount) ??
+    moneyValue(order.totalAmount) ??
+    moneyValue(order.order_amount) ??
+    moneyValue(order.orderAmount) ??
+    moneyValue(order.paid_amount) ??
+    moneyValue(order.paidAmount) ??
+    moneyValue(order.payment_amount) ??
+    moneyValue(order.paymentAmount) ??
+    (paymentInfo
+      ? moneyValue(paymentInfo.total_amount) ??
+        moneyValue(paymentInfo.totalAmount) ??
+        moneyValue(paymentInfo.order_amount) ??
+        moneyValue(paymentInfo.orderAmount) ??
+        moneyValue(paymentInfo.paid_amount) ??
+        moneyValue(paymentInfo.paidAmount) ??
+        moneyValue(paymentInfo.payment_amount) ??
+        moneyValue(paymentInfo.paymentAmount)
+      : undefined);
+  const orderTotalCurrency =
+    stringValue(order.currency) ??
+    stringValue(order.currency_code) ??
+    stringValue(order.currencyCode) ??
+    (paymentInfo
+      ? stringValue(paymentInfo.currency) ??
+        stringValue(paymentInfo.currency_code) ??
+        stringValue(paymentInfo.currencyCode)
+      : undefined);
+
+  if (orderTotalAmount !== undefined) {
+    details.orderTotalAmount = orderTotalAmount;
+  }
+
+  if (orderTotalCurrency) {
+    details.orderTotalCurrency = orderTotalCurrency;
+  }
+
   return details;
 }
 
@@ -319,6 +364,29 @@ function numberValue(value: unknown): number | undefined {
   if (typeof value === "string") {
     const parsed = Number(value);
     return Number.isInteger(parsed) && parsed > 0 ? parsed : undefined;
+  }
+
+  return undefined;
+}
+
+function moneyValue(value: unknown): number | undefined {
+  if (typeof value === "number" && Number.isFinite(value) && value >= 0) {
+    return value;
+  }
+
+  if (typeof value === "string") {
+    const normalized = value.replace(/,/g, "").trim();
+    const parsed = Number(normalized);
+    return Number.isFinite(parsed) && parsed >= 0 ? parsed : undefined;
+  }
+
+  if (isRecord(value)) {
+    return (
+      moneyValue(value.amount) ??
+      moneyValue(value.value) ??
+      moneyValue(value.total_amount) ??
+      moneyValue(value.totalAmount)
+    );
   }
 
   return undefined;

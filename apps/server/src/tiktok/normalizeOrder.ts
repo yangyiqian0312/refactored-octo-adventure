@@ -12,6 +12,8 @@ type NormalizedFields = {
   productTitle: string | undefined;
   quantity: number | undefined;
   imageUrl: string | undefined;
+  orderTotalAmount: number | undefined;
+  orderTotalCurrency: string | undefined;
 };
 
 export function extractTikTokEventId(payload: TikTokWebhookPayload): string {
@@ -95,6 +97,8 @@ export function normalizeTikTokOrderAlert(payload: TikTokWebhookPayload): OrderA
     productTitle: maybeFields.productTitle,
     quantity: maybeFields.quantity,
     imageUrl: maybeFields.imageUrl,
+    orderTotalAmount: maybeFields.orderTotalAmount,
+    orderTotalCurrency: maybeFields.orderTotalCurrency,
     createdAt: new Date().toISOString(),
     tier: calculateOrderTier(maybeFields.quantity)
   };
@@ -109,6 +113,8 @@ export function normalizeTikTokOrderDetailsAlert(details: TikTokOrderDetails): O
     productTitle: details.productTitle,
     quantity: details.quantity,
     imageUrl: details.imageUrl,
+    orderTotalAmount: details.orderTotalAmount,
+    orderTotalCurrency: details.orderTotalCurrency,
     createdAt: new Date().toISOString(),
     tier: calculateOrderTier(details.quantity)
   };
@@ -127,7 +133,16 @@ function pickDisplayFields(data: Record<string, unknown>): NormalizedFields {
       stringValue(data.sku_name) ??
       stringValue(data.item_name),
     quantity: numberValue(data.quantity) ?? numberValue(data.qty),
-    imageUrl: stringValue(data.imageUrl) ?? stringValue(data.image_url)
+    imageUrl: stringValue(data.imageUrl) ?? stringValue(data.image_url),
+    orderTotalAmount:
+      moneyValue(data.orderTotalAmount) ??
+      moneyValue(data.order_total_amount) ??
+      moneyValue(data.totalAmount) ??
+      moneyValue(data.total_amount),
+    orderTotalCurrency:
+      stringValue(data.orderTotalCurrency) ??
+      stringValue(data.order_total_currency) ??
+      stringValue(data.currency)
   };
 }
 
@@ -149,6 +164,19 @@ function stringValue(value: unknown): string | undefined {
 
 function numberValue(value: unknown): number | undefined {
   return typeof value === "number" && Number.isInteger(value) && value > 0 ? value : undefined;
+}
+
+function moneyValue(value: unknown): number | undefined {
+  if (typeof value === "number" && Number.isFinite(value) && value >= 0) {
+    return value;
+  }
+
+  if (typeof value === "string") {
+    const parsed = Number(value.replace(/,/g, "").trim());
+    return Number.isFinite(parsed) && parsed >= 0 ? parsed : undefined;
+  }
+
+  return undefined;
 }
 
 function firstString(value: unknown): string | undefined {
