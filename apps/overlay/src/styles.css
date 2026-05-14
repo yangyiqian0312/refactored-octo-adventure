@@ -371,11 +371,10 @@ body {
 }
 
 .starmie-burst__sprite {
-  width: clamp(220px, 24vw, 360px);
+  width: min(100vw, 1080px);
   height: auto;
   object-fit: contain;
   transform-origin: center center;
-  animation: starmie-rush 2.4s linear infinite;
 }
 
 .status-dot {
@@ -530,20 +529,6 @@ body {
   }
 }
 
-@keyframes starmie-rush {
-  0% {
-    opacity: 0;
-    transform: scale(0.001);
-  }
-  5% {
-    opacity: 1;
-  }
-  100% {
-    opacity: 1;
-    transform: scale(9.2);
-  }
-}
-
 @media (max-width: 760px) {
   .alert-stage {
     width: 100vw;
@@ -631,6 +616,6 @@ body {
   }
 
   .starmie-burst__sprite {
-    width: clamp(180px, 36vw, 300px);
+    width: 100vw;
   }
 }

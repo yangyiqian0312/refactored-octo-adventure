@@ -205,10 +205,9 @@ function StarmieTestPage() {
       <section className="starmie-burst">
         <video
           className="starmie-burst__sprite"
-          src="/starmie-test-person.mp4"
+          src="/person-run-transparent.webm"
           autoPlay
           muted
-          loop
           playsInline
         />
       </section>
