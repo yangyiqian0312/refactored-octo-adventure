@@ -203,7 +203,14 @@ function StarmieTestPage() {
   return (
     <main className="starmie-test" aria-live="polite">
       <section className="starmie-burst">
-        <img className="starmie-burst__sprite" src="/mega-starmie.gif" alt="" />
+        <video
+          className="starmie-burst__sprite"
+          src="/starmie-test-person.mp4"
+          autoPlay
+          muted
+          loop
+          playsInline
+        />
       </section>
     </main>
   );

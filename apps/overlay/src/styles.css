@@ -371,9 +371,9 @@ body {
 }
 
 .starmie-burst__sprite {
-  width: clamp(160px, 18vw, 260px);
+  width: clamp(220px, 24vw, 360px);
   height: auto;
-  image-rendering: pixelated;
+  object-fit: contain;
   transform-origin: center center;
   animation: starmie-rush 2.4s linear infinite;
 }
@@ -644,6 +644,6 @@ body {
   }
 
   .starmie-burst__sprite {
-    width: clamp(140px, 28vw, 220px);
+    width: clamp(180px, 36vw, 300px);
   }
 }
