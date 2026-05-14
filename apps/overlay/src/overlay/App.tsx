@@ -8,6 +8,10 @@ const DISPLAY_MS = 4300;
 const DEMO_NAMES = ["nichoooooooole", "dannyboy1097", "m***23", "PackPalaceFan", "charizardpulls"];
 
 export function App() {
+  if (window.location.pathname === "/control") {
+    return <QueueControlPage />;
+  }
+
   if (window.location.pathname === "/big-order-test") {
     return <BigOrderTestPage />;
   }
@@ -17,6 +21,127 @@ export function App() {
   }
 
   return <OrderOverlayApp />;
+}
+
+function QueueControlPage() {
+  const params = useMemo(() => new URLSearchParams(window.location.search), []);
+  const serverUrl = params.get("server") ?? "http://localhost:3001";
+  const token = params.get("token") ?? "";
+  const normalizedServerUrl = useMemo(() => serverUrl.replace(/\/$/, ""), [serverUrl]);
+  const { connectionState, pendingOrders, errorMessage } = useOrderSocket(serverUrl, token);
+  const [displayQueue, setDisplayQueue] = useState<OrderQueueItem[]>([]);
+  const [statusMessage, setStatusMessage] = useState("Ready");
+  const [isBusy, setIsBusy] = useState(false);
+
+  useEffect(() => {
+    setDisplayQueue(pendingOrders);
+  }, [pendingOrders]);
+
+  const requestQueueAction = async (
+    label: string,
+    path: string,
+    body?: Record<string, unknown>
+  ) => {
+    if (!token) {
+      setStatusMessage("Missing token");
+      return;
+    }
+
+    setIsBusy(true);
+    setStatusMessage(`${label}...`);
+
+    try {
+      const requestInit: RequestInit = {
+        method: body ? "POST" : "GET",
+        headers: {
+          authorization: `Bearer ${token}`,
+          ...(body ? { "content-type": "application/json" } : {})
+        }
+      };
+
+      if (body) {
+        requestInit.body = JSON.stringify(body);
+      }
+
+      const response = await fetch(`${normalizedServerUrl}${path}`, requestInit);
+      const payload = await response.json();
+
+      if (!response.ok || payload.ok === false) {
+        throw new Error(payload.error ?? `${label} failed`);
+      }
+
+      if (Array.isArray(payload.queue)) {
+        setDisplayQueue(payload.queue as OrderQueueItem[]);
+      }
+
+      setStatusMessage(`${label} complete`);
+    } catch (error) {
+      setStatusMessage(error instanceof Error ? error.message : `${label} failed`);
+    } finally {
+      setIsBusy(false);
+    }
+  };
+
+  const completeFirst = () => requestQueueAction("Complete First", "/api/queue/shift", {});
+  const clearQueue = () => requestQueueAction("Clear Queue", "/api/queue/clear", {});
+  const refreshQueue = () => requestQueueAction("Refresh", "/api/queue");
+  const removeOrder = (orderId: string) =>
+    requestQueueAction("Mark Done", "/api/queue/remove", { orderId });
+
+  return (
+    <main className="control-page">
+      <section className="control-panel">
+        <div className="control-panel__header">
+          <div>
+            <p className="control-panel__eyebrow">Live Order Overlay</p>
+            <h1>Queue Control</h1>
+          </div>
+          <span className={`control-pill control-pill--${connectionState}`}>
+            {connectionState}
+          </span>
+        </div>
+
+        <div className="control-actions">
+          <button type="button" onClick={completeFirst} disabled={isBusy || displayQueue.length === 0}>
+            Complete First
+          </button>
+          <button type="button" onClick={clearQueue} disabled={isBusy || displayQueue.length === 0}>
+            Clear Queue
+          </button>
+          <button type="button" onClick={refreshQueue} disabled={isBusy}>
+            Refresh
+          </button>
+        </div>
+
+        <div className="control-status">
+          <span>{statusMessage}</span>
+          {errorMessage ? <span>{errorMessage}</span> : null}
+        </div>
+
+        {displayQueue.length > 0 ? (
+          <ol className="control-queue">
+            {displayQueue.map((order, index) => (
+              <li className="control-queue__item" key={order.orderId}>
+                <span className="control-queue__rank">{index + 1}</span>
+                <div className="control-queue__body">
+                  <strong>{order.buyerDisplayName}</strong>
+                  <span>{order.productTitle ?? "TikTok Shop Order"}</span>
+                </div>
+                <button type="button" onClick={() => removeOrder(order.orderId)} disabled={isBusy}>
+                  Done
+                </button>
+              </li>
+            ))}
+          </ol>
+        ) : (
+          <div className="control-empty">
+            <strong>Q is Open :3</strong>
+            <span>No one is waiting right now.</span>
+          </div>
+        )}
+      </section>
+    </main>
+  );
 }
 
 function OrderOverlayApp() {

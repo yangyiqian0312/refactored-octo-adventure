@@ -9,7 +9,7 @@ import {
 } from "@live-alerts/shared";
 import Fastify, { type FastifyInstance } from "fastify";
 import { Server as SocketIOServer } from "socket.io";
-import { ZodError } from "zod";
+import { z, ZodError } from "zod";
 import type { AppConfig, TikTokStoreConfig } from "./config.js";
 import { logger } from "./logger.js";
 import { InMemoryOrderStore } from "./store.js";
@@ -32,6 +32,10 @@ import {
 import { exchangeTikTokAuthCode, getTikTokAuthorizedShops } from "./tiktok/auth.js";
 import { tiktokWebhookPayloadSchema } from "./tiktok/types.js";
 import { verifyTikTokWebhookSignature } from "./tiktok/webhookVerifier.js";
+
+const queueRemoveRequestSchema = z.object({
+  orderId: z.string().min(1)
+});
 
 export type AppContext = {
   app: FastifyInstance;
@@ -221,6 +225,83 @@ export async function createApp(config: AppConfig): Promise<AppContext> {
         topLevelKeys: listTopLevelKeys(event.payload)
       }))
     };
+  });
+
+  app.get("/api/queue", async (request, reply) => {
+    const storeConfig = findStoreForDebugRequest(request.headers.authorization, config);
+
+    if (!storeConfig) {
+      return reply.status(401).send({ ok: false });
+    }
+
+    return {
+      ok: true,
+      queue: getStore(stores, storeConfig.id).getPendingOrders()
+    };
+  });
+
+  app.post("/api/queue/clear", async (request, reply) => {
+    const storeConfig = findStoreForDebugRequest(request.headers.authorization, config);
+
+    if (!storeConfig) {
+      return reply.status(401).send({ ok: false });
+    }
+
+    const store = getStore(stores, storeConfig.id);
+    const removedCount = store.clearPendingOrders();
+    const queue = store.getPendingOrders();
+    io.to(roomForStore(storeConfig.id)).emit("order:queue", queue);
+    logger.info("queue cleared", { storeId: storeConfig.id, removedCount });
+
+    return { ok: true, removedCount, queue };
+  });
+
+  app.post("/api/queue/shift", async (request, reply) => {
+    const storeConfig = findStoreForDebugRequest(request.headers.authorization, config);
+
+    if (!storeConfig) {
+      return reply.status(401).send({ ok: false });
+    }
+
+    const store = getStore(stores, storeConfig.id);
+    const removed = store.shiftPendingOrder();
+    const queue = store.getPendingOrders();
+    io.to(roomForStore(storeConfig.id)).emit("order:queue", queue);
+    logger.info("queue first order completed", {
+      storeId: storeConfig.id,
+      removedOrderId: removed?.orderId
+    });
+
+    return { ok: true, removed, queue };
+  });
+
+  app.post("/api/queue/remove", async (request, reply) => {
+    const storeConfig = findStoreForDebugRequest(request.headers.authorization, config);
+
+    if (!storeConfig) {
+      return reply.status(401).send({ ok: false });
+    }
+
+    try {
+      const input = queueRemoveRequestSchema.parse(parseJsonBody(request.body));
+      const store = getStore(stores, storeConfig.id);
+      const removed = store.removePendingOrder(input.orderId);
+      const queue = store.getPendingOrders();
+      io.to(roomForStore(storeConfig.id)).emit("order:queue", queue);
+      logger.info("queue order removed", {
+        storeId: storeConfig.id,
+        orderId: input.orderId,
+        removed
+      });
+
+      return { ok: true, removed, queue };
+    } catch (error) {
+      if (error instanceof ZodError) {
+        return reply.status(400).send({ ok: false, error: "invalid queue remove payload" });
+      }
+
+      throw error;
+    }
   });
 
   app.post("/webhooks/tiktok", async (request, reply) => {

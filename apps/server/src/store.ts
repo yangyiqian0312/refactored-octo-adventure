@@ -49,6 +49,22 @@ export class InMemoryOrderStore {
     return this.pendingOrders.delete(orderId);
   }
 
+  clearPendingOrders(): number {
+    const removedCount = this.pendingOrders.size;
+    this.pendingOrders.clear();
+    return removedCount;
+  }
+
+  shiftPendingOrder(): OrderQueueItem | undefined {
+    const nextOrder = this.getPendingOrders()[0];
+
+    if (nextOrder) {
+      this.pendingOrders.delete(nextOrder.orderId);
+    }
+
+    return nextOrder;
+  }
+
   getPendingOrders(): OrderQueueItem[] {
     return [...this.pendingOrders.values()].sort((left, right) =>
       left.updatedAt.localeCompare(right.updatedAt)

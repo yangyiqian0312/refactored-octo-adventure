@@ -47,6 +47,195 @@ body {
   background-color: rgba(0, 0, 0, 0) !important;
 }
 
+.control-page {
+  min-height: 100vh;
+  padding: clamp(20px, 4vw, 56px);
+  overflow: auto;
+  background:
+    radial-gradient(circle at 18% 10%, rgba(35, 231, 212, 0.18), transparent 34%),
+    radial-gradient(circle at 88% 12%, rgba(244, 213, 106, 0.2), transparent 32%),
+    linear-gradient(135deg, #10151b 0%, #161b22 50%, #0d1117 100%);
+  color: #f8fbff;
+}
+
+.control-panel {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: clamp(20px, 4vw, 38px);
+  border: 3px solid rgba(248, 251, 255, 0.88);
+  border-radius: 12px;
+  background:
+    linear-gradient(135deg, rgba(24, 30, 32, 0.96), rgba(55, 60, 59, 0.88)),
+    repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.05) 0 1px, transparent 1px 18px);
+  box-shadow:
+    -10px -10px 0 #f4d56a,
+    10px 10px 0 #23e7d4,
+    0 26px 72px rgba(0, 0, 0, 0.32);
+}
+
+.control-panel__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+  margin-bottom: 24px;
+}
+
+.control-panel__eyebrow {
+  margin: 0 0 6px;
+  color: #23e7d4;
+  font-size: 13px;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.control-panel h1 {
+  margin: 0;
+  font-family: "Bebas Neue", Impact, sans-serif;
+  font-size: clamp(42px, 7vw, 80px);
+  line-height: 0.95;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.control-pill {
+  flex: 0 0 auto;
+  padding: 8px 12px;
+  border: 2px solid rgba(248, 251, 255, 0.8);
+  border-radius: 999px;
+  color: #10151b;
+  background: #f4d56a;
+  font-size: 13px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.control-pill--connected {
+  background: #23e7d4;
+}
+
+.control-pill--error {
+  color: #fff;
+  background: #ff3166;
+}
+
+.control-actions {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.control-actions button,
+.control-queue__item button {
+  min-height: 48px;
+  border: 0;
+  border-radius: 8px;
+  color: #10151b;
+  background: #f4d56a;
+  box-shadow: 0 5px 0 rgba(0, 0, 0, 0.38);
+  cursor: pointer;
+  font: 900 16px/1 "Manrope", sans-serif;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.control-actions button:hover:not(:disabled),
+.control-queue__item button:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+
+.control-actions button:active:not(:disabled),
+.control-queue__item button:active:not(:disabled) {
+  transform: translateY(3px);
+  box-shadow: 0 2px 0 rgba(0, 0, 0, 0.38);
+}
+
+.control-actions button:disabled,
+.control-queue__item button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.control-status {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+  margin-bottom: 18px;
+  color: rgba(248, 251, 255, 0.78);
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.control-queue {
+  display: grid;
+  gap: 12px;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.control-queue__item {
+  display: grid;
+  grid-template-columns: 44px 1fr 96px;
+  align-items: center;
+  gap: 14px;
+  padding: 12px;
+  border: 2px solid rgba(248, 251, 255, 0.6);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.control-queue__rank {
+  display: grid;
+  width: 38px;
+  height: 38px;
+  place-items: center;
+  border-radius: 6px;
+  background: #ff3166;
+  color: #fff;
+  font-weight: 900;
+}
+
+.control-queue__body {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.control-queue__body strong,
+.control-queue__body span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.control-queue__body strong {
+  color: #fff;
+  font-size: 20px;
+}
+
+.control-queue__body span {
+  color: rgba(248, 251, 255, 0.68);
+  font-size: 14px;
+}
+
+.control-empty {
+  display: grid;
+  gap: 8px;
+  padding: 26px;
+  border: 2px dashed rgba(248, 251, 255, 0.42);
+  border-radius: 10px;
+  color: rgba(248, 251, 255, 0.72);
+}
+
+.control-empty strong {
+  color: #23e7d4;
+  font: 900 28px/1 "Bebas Neue", Impact, sans-serif;
+  text-transform: uppercase;
+}
+
 .alert-stage {
   position: absolute;
   left: 0;
@@ -645,6 +834,31 @@ body {
 }
 
 @media (max-width: 760px) {
+  .control-page {
+    padding: 18px;
+  }
+
+  .control-panel {
+    box-shadow:
+      -6px -6px 0 #f4d56a,
+      6px 6px 0 #23e7d4,
+      0 20px 52px rgba(0, 0, 0, 0.34);
+  }
+
+  .control-panel__header,
+  .control-actions,
+  .control-queue__item {
+    grid-template-columns: 1fr;
+  }
+
+  .control-panel__header {
+    display: grid;
+  }
+
+  .control-queue__item {
+    justify-items: stretch;
+  }
+
   .alert-stage {
     width: 100vw;
     min-height: 120px;
