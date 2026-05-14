@@ -201,25 +201,32 @@ function BigOrderTestPage() {
 
 function StarmieTestPage() {
   const [isVisible, setIsVisible] = useState(true);
+  const params = useMemo(() => new URLSearchParams(window.location.search), []);
+  const buyerName = params.get("name") ?? "m***23";
 
   return (
     <main className="starmie-test" aria-live="polite">
       <section className="starmie-burst">
         {isVisible ? (
-          <video
-            className="starmie-burst__sprite"
-            src="/person-run-transparent.webm"
-            autoPlay
-            muted
-            playsInline
-            onLoadedMetadata={(event) => {
-              const video = event.currentTarget;
-              if (Number.isFinite(video.duration) && video.duration > 0.7) {
-                video.playbackRate = video.duration / (video.duration - 0.5);
-              }
-            }}
-            onEnded={() => setIsVisible(false)}
-          />
+          <>
+            <div className="starmie-order-toast">
+              <span>{buyerName}</span> just ordered!
+            </div>
+            <video
+              className="starmie-burst__sprite"
+              src="/person-run-transparent.webm"
+              autoPlay
+              muted
+              playsInline
+              onLoadedMetadata={(event) => {
+                const video = event.currentTarget;
+                if (Number.isFinite(video.duration) && video.duration > 0.7) {
+                  video.playbackRate = video.duration / (video.duration - 0.5);
+                }
+              }}
+              onEnded={() => setIsVisible(false)}
+            />
+          </>
         ) : null}
       </section>
     </main>
