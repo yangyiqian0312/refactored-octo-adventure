@@ -27,6 +27,14 @@
     {
       "source": "/starmie-test/:path*",
       "destination": "/index.html"
+    },
+    {
+      "source": "/control",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/control/:path*",
+      "destination": "/index.html"
     }
   ]
 }
