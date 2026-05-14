@@ -200,16 +200,27 @@ function BigOrderTestPage() {
 }
 
 function StarmieTestPage() {
+  const [isVisible, setIsVisible] = useState(true);
+
   return (
     <main className="starmie-test" aria-live="polite">
       <section className="starmie-burst">
-        <video
-          className="starmie-burst__sprite"
-          src="/person-run-transparent.webm"
-          autoPlay
-          muted
-          playsInline
-        />
+        {isVisible ? (
+          <video
+            className="starmie-burst__sprite"
+            src="/person-run-transparent.webm"
+            autoPlay
+            muted
+            playsInline
+            onLoadedMetadata={(event) => {
+              const video = event.currentTarget;
+              if (Number.isFinite(video.duration) && video.duration > 1.2) {
+                video.playbackRate = video.duration / (video.duration - 1);
+              }
+            }}
+            onEnded={() => setIsVisible(false)}
+          />
+        ) : null}
       </section>
     </main>
   );
