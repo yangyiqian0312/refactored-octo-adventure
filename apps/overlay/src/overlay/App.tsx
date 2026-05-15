@@ -27,7 +27,7 @@ function QueueControlPage() {
   const params = useMemo(() => new URLSearchParams(window.location.search), []);
   const serverUrl = params.get("server") ?? "http://localhost:3001";
   const token = params.get("token") ?? "";
-  const roomName = params.get("room")?.trim() || "Live Room";
+  const roomName = params.get("room")?.trim() || defaultRoomName(serverUrl, token);
   const normalizedServerUrl = useMemo(() => serverUrl.replace(/\/$/, ""), [serverUrl]);
   const { connectionState, pendingOrders, errorMessage } = useOrderSocket(serverUrl, token);
   const [displayQueue, setDisplayQueue] = useState<OrderQueueItem[]>([]);
@@ -268,6 +268,10 @@ function overlayThemeStyle(serverUrl: string, token: string): CSSProperties {
 
 function isStoreTwoOverlay(serverUrl: string, token: string): boolean {
   return serverUrl.includes("tiktok-shop-live-alert-server-5u57.onrender.com") || token === "otaku-overlay-token";
+}
+
+function defaultRoomName(serverUrl: string, token: string): string {
+  return isStoreTwoOverlay(serverUrl, token) ? "Otaku Card Haven" : "Pack Palace";
 }
 
 function shouldUseBigOrderAlert(alert: OrderAlert): boolean {
