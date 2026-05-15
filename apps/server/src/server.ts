@@ -304,6 +304,34 @@ export async function createApp(config: AppConfig): Promise<AppContext> {
     }
   });
 
+  app.get("/api/button/queue/shift", async (request, reply) => {
+    const query = request.query as Record<string, string | undefined>;
+    const storeConfig = findStoreByOverlayToken(config, query.token ?? "");
+
+    if (!storeConfig) {
+      return reply.status(401).type("text/html").send(renderButtonResultPage({
+        title: "Unauthorized",
+        message: "Invalid Stream Deck token."
+      }));
+    }
+
+    const store = getStore(stores, storeConfig.id);
+    const removed = store.shiftPendingOrder();
+    const queue = store.getPendingOrders();
+    io.to(roomForStore(storeConfig.id)).emit("order:queue", queue);
+    logger.info("queue first order completed from button url", {
+      storeId: storeConfig.id,
+      removedOrderId: removed?.orderId
+    });
+
+    return reply.type("text/html").send(renderButtonResultPage({
+      title: "Complete First",
+      message: removed
+        ? `${escapeHtml(removed.buyerDisplayName)} completed.`
+        : "Queue is already empty."
+    }));
+  });
+
   app.post("/webhooks/tiktok", async (request, reply) => {
     const rawBody = typeof request.body === "string" ? request.body : JSON.stringify(request.body ?? {});
     const verification = verifyTikTokWebhookSignature(rawBody, request.headers, {
@@ -506,6 +534,57 @@ function getTikTokClient(clients: Map<string, TikTokOrderClient>, storeId: strin
 
 function roomForStore(storeId: string): string {
   return `store:${storeId}`;
+}
+
+function renderButtonResultPage({
+  title,
+  message
+}: {
+  title: string;
+  message: string;
+}): string {
+  return `<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>${escapeHtml(title)}</title>
+    <style>
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: grid;
+        place-items: center;
+        background: #10151b;
+        color: #f8fbff;
+        font-family: Arial, sans-serif;
+      }
+      main {
+        max-width: 520px;
+        padding: 28px;
+        border: 3px solid #f8fbff;
+        border-radius: 12px;
+        background: linear-gradient(135deg, #181e20, #373c3b);
+        box-shadow: -8px -8px 0 #f4d56a, 8px 8px 0 #23e7d4;
+      }
+      h1 {
+        margin: 0 0 10px;
+        font-size: 34px;
+        text-transform: uppercase;
+      }
+      p {
+        margin: 0;
+        font-weight: 800;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>${escapeHtml(title)}</h1>
+      <p>${message}</p>
+    </main>
+  </body>
+</html>`;
 }
 
 function renderOAuthSuccessPage(

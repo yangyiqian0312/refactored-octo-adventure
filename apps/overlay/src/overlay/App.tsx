@@ -228,8 +228,12 @@ function OrderOverlayApp() {
       ) : null}
 
       <section className="alert-stage">
-        {currentAlert && shouldUseBigOrderAlert(currentAlert, isStoreTwo) ? (
-          <BigOrderAlertCard alert={currentAlert} key={currentAlert.id} />
+        {currentAlert && shouldUseBigOrderAlert(currentAlert) ? (
+          <BigOrderAlertCard
+            alert={currentAlert}
+            variant={isStoreTwo ? "store2" : "default"}
+            key={currentAlert.id}
+          />
         ) : currentAlert ? (
           <OrderAlertCard
             alert={currentAlert}
@@ -266,8 +270,8 @@ function isStoreTwoOverlay(serverUrl: string, token: string): boolean {
   return serverUrl.includes("tiktok-shop-live-alert-server-5u57.onrender.com") || token === "otaku-overlay-token";
 }
 
-function shouldUseBigOrderAlert(alert: OrderAlert, isStoreTwo: boolean): boolean {
-  return !isStoreTwo && (alert.orderTotalAmount ?? 0) >= 500;
+function shouldUseBigOrderAlert(alert: OrderAlert): boolean {
+  return (alert.orderTotalAmount ?? 0) >= 500;
 }
 
 function PendingOrderQueue({ orders }: { orders: OrderQueueItem[] }) {
@@ -314,30 +318,45 @@ function OrderAlertCard({
   );
 }
 
-function BigOrderAlertCard({ alert }: { alert: OrderAlert }) {
+function BigOrderAlertCard({
+  alert,
+  variant
+}: {
+  alert: OrderAlert;
+  variant: "default" | "store2";
+}) {
   const [isVisible, setIsVisible] = useState(true);
 
   return (
-    <article className="order-alert-big">
+    <article className={`order-alert-big order-alert-big--${variant}`}>
       {isVisible ? (
         <>
           <div className="order-alert-big__toast">
             <span>{alert.buyerDisplayName}</span> just ordered!
           </div>
-          <video
-            className="order-alert-big__runner"
-            src="/person-run-transparent.webm"
-            autoPlay
-            muted
-            playsInline
-            onLoadedMetadata={(event) => {
-              const video = event.currentTarget;
-              if (Number.isFinite(video.duration) && video.duration > 0.7) {
-                video.playbackRate = video.duration / (video.duration - 0.5);
-              }
-            }}
-            onEnded={() => setIsVisible(false)}
-          />
+          {variant === "store2" ? (
+            <img
+              className="order-alert-big__runner order-alert-big__runner--gif"
+              src="/one-piece-shock-big.gif"
+              alt=""
+              onAnimationEnd={() => setIsVisible(false)}
+            />
+          ) : (
+            <video
+              className="order-alert-big__runner"
+              src="/person-run-transparent.webm"
+              autoPlay
+              muted
+              playsInline
+              onLoadedMetadata={(event) => {
+                const video = event.currentTarget;
+                if (Number.isFinite(video.duration) && video.duration > 0.7) {
+                  video.playbackRate = video.duration / (video.duration - 0.5);
+                }
+              }}
+              onEnded={() => setIsVisible(false)}
+            />
+          )}
         </>
       ) : null}
     </article>
