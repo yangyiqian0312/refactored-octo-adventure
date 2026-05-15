@@ -94,8 +94,8 @@ function QueueControlPage() {
       <section className="control-panel">
         <div className="control-panel__header">
           <div>
-            <p className="control-panel__eyebrow">{roomName}</p>
-            <h1>Queue Control</h1>
+            <p className="control-panel__eyebrow">Q Control</p>
+            <h1>{roomName}</h1>
           </div>
           <span className={`control-pill control-pill--${connectionState}`}>
             {connectionState}
