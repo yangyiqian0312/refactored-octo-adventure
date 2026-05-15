@@ -27,6 +27,7 @@ function QueueControlPage() {
   const params = useMemo(() => new URLSearchParams(window.location.search), []);
   const serverUrl = params.get("server") ?? "http://localhost:3001";
   const token = params.get("token") ?? "";
+  const roomName = params.get("room")?.trim() || "Live Room";
   const normalizedServerUrl = useMemo(() => serverUrl.replace(/\/$/, ""), [serverUrl]);
   const { connectionState, pendingOrders, errorMessage } = useOrderSocket(serverUrl, token);
   const [displayQueue, setDisplayQueue] = useState<OrderQueueItem[]>([]);
@@ -93,7 +94,7 @@ function QueueControlPage() {
       <section className="control-panel">
         <div className="control-panel__header">
           <div>
-            <p className="control-panel__eyebrow">Live Order Overlay</p>
+            <p className="control-panel__eyebrow">{roomName}</p>
             <h1>Queue Control</h1>
           </div>
           <span className={`control-pill control-pill--${connectionState}`}>
