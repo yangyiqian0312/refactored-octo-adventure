@@ -391,12 +391,12 @@ body {
   left: 50%;
   top: 0;
   z-index: 2;
-  min-width: min(520px, 72vw);
-  max-width: min(680px, 82vw);
-  padding: 22px 28px;
+  min-width: min(430px, 56vw);
+  max-width: min(560px, 64vw);
+  padding: 16px 20px;
   color: #f8fbff;
   font-family: "Impact", "Arial Black", sans-serif;
-  font-size: clamp(28px, 4vw, 58px);
+  font-size: clamp(24px, 3.1vw, 44px);
   line-height: 0.95;
   letter-spacing: 0;
   text-transform: uppercase;
@@ -407,8 +407,8 @@ body {
   border: 4px solid #e8eff0;
   border-radius: 8px;
   box-shadow:
-    -9px -9px 0 #f4d56a,
-    9px 9px 0 #23e7d4,
+    -8px -8px 0 #f4d56a,
+    8px 8px 0 #23e7d4,
     0 20px 40px rgba(0, 0, 0, 0.26);
   opacity: 0;
   transform: translateX(-50%) translateY(-24px) scale(0.9);
@@ -427,8 +427,8 @@ body {
   border-color: #ffffff;
   text-shadow: none;
   box-shadow:
-    -9px -9px 0 #f4d56a,
-    9px 9px 0 rgba(150, 0, 24, 0.55),
+    -8px -8px 0 #f4d56a,
+    8px 8px 0 rgba(150, 0, 24, 0.55),
     0 20px 40px rgba(0, 0, 0, 0.22);
 }
 
@@ -811,9 +811,10 @@ body {
   }
 
   .order-alert-big__toast {
-    min-width: 66vw;
-    padding: 16px 20px;
-    font-size: clamp(24px, 6vw, 42px);
+    min-width: 48vw;
+    max-width: 58vw;
+    padding: 12px 16px;
+    font-size: clamp(22px, 4.8vw, 34px);
   }
 
   .order-alert-big__runner {
