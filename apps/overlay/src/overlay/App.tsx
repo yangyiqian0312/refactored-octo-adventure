@@ -5,19 +5,10 @@ import { enqueueAlert, popNextAlert } from "./alertQueue.js";
 import { useOrderSocket } from "./useOrderSocket.js";
 
 const DISPLAY_MS = 4300;
-const DEMO_NAMES = ["nichoooooooole", "dannyboy1097", "m***23", "PackPalaceFan", "charizardpulls"];
 
 export function App() {
   if (window.location.pathname === "/control") {
     return <QueueControlPage />;
-  }
-
-  if (window.location.pathname === "/big-order-test") {
-    return <BigOrderTestPage />;
-  }
-
-  if (window.location.pathname === "/starmie-test") {
-    return <StarmieTestPage />;
   }
 
   return <OrderOverlayApp />;
@@ -150,7 +141,6 @@ function OrderOverlayApp() {
   const serverUrl = params.get("server") ?? "http://localhost:3001";
   const token = params.get("token") ?? "";
   const debug = params.get("debug") === "1";
-  const demo = params.get("demo") === "1";
   const isStoreTwo = isStoreTwoOverlay(serverUrl, token);
   const themeStyle = useMemo(() => overlayThemeStyle(serverUrl, token), [serverUrl, token]);
   const runnerGif = isStoreTwo ? "/luffy-run.gif" : "/pikachu-run.gif";
@@ -163,36 +153,6 @@ function OrderOverlayApp() {
       setQueue((existing) => enqueueAlert(existing, latestAlert));
     }
   }, [latestAlert]);
-
-  useEffect(() => {
-    if (!demo) {
-      return;
-    }
-
-    let demoIndex = 0;
-    const pushDemoAlert = () => {
-      const buyerDisplayName = DEMO_NAMES[demoIndex % DEMO_NAMES.length] ?? "Someone";
-      demoIndex += 1;
-
-      setQueue((existing) =>
-        enqueueAlert(existing, {
-          id: `demo-${Date.now()}-${demoIndex}`,
-          source: "test",
-          orderId: `demo-order-${demoIndex}`,
-          buyerDisplayName,
-          productTitle: "Demo Order",
-          quantity: 1,
-          createdAt: new Date().toISOString(),
-          tier: "normal"
-        })
-      );
-    };
-
-    pushDemoAlert();
-    const intervalId = window.setInterval(pushDemoAlert, 5800);
-
-    return () => window.clearInterval(intervalId);
-  }, [demo]);
 
   useEffect(() => {
     if (currentAlert || queue.length === 0) {
@@ -234,6 +194,8 @@ function OrderOverlayApp() {
             variant={isStoreTwo ? "store2" : "default"}
             key={currentAlert.id}
           />
+        ) : currentAlert && shouldUsePackPalace200Alert(currentAlert, isStoreTwo) ? (
+          <PackPalace200AlertCard alert={currentAlert} key={currentAlert.id} />
         ) : currentAlert ? (
           <OrderAlertCard
             alert={currentAlert}
@@ -276,6 +238,11 @@ function defaultRoomName(serverUrl: string, token: string): string {
 
 function shouldUseBigOrderAlert(alert: OrderAlert): boolean {
   return (alert.orderTotalAmount ?? 0) >= 500;
+}
+
+function shouldUsePackPalace200Alert(alert: OrderAlert, isStoreTwo: boolean): boolean {
+  const amount = alert.orderTotalAmount ?? 0;
+  return !isStoreTwo && amount >= 200 && amount < 500;
 }
 
 function PendingOrderQueue({ orders }: { orders: OrderQueueItem[] }) {
@@ -367,54 +334,27 @@ function BigOrderAlertCard({
   );
 }
 
-function BigOrderTestPage() {
-  return (
-    <main className="big-order-test" aria-live="polite">
-      <section className="big-order-alert">
-        <div className="big-order-panel">
-          <p className="big-order-kicker">WARNING</p>
-          <h1>BIG ORDER INCOMING</h1>
-          <p className="big-order-subtitle">Brace for the pull</p>
-        </div>
-        <img className="big-order-charizard" src="/charizard-fly.gif" alt="" />
-        <div className="big-order-streak big-order-streak--a" />
-        <div className="big-order-streak big-order-streak--b" />
-      </section>
-    </main>
-  );
-}
-
-function StarmieTestPage() {
+function PackPalace200AlertCard({ alert }: { alert: OrderAlert }) {
   const [isVisible, setIsVisible] = useState(true);
-  const params = useMemo(() => new URLSearchParams(window.location.search), []);
-  const buyerName = params.get("name") ?? "m***23";
 
   return (
-    <main className="starmie-test" aria-live="polite">
-      <section className="starmie-burst">
-        {isVisible ? (
-          <>
-            <div className="starmie-order-toast">
-              <span>{buyerName}</span> just ordered!
-            </div>
-            <video
-              className="starmie-burst__sprite"
-              src="/person-run-transparent.webm"
-              autoPlay
-              muted
-              playsInline
-              onLoadedMetadata={(event) => {
-                const video = event.currentTarget;
-                if (Number.isFinite(video.duration) && video.duration > 0.7) {
-                  video.playbackRate = video.duration / (video.duration - 0.5);
-                }
-              }}
-              onEnded={() => setIsVisible(false)}
-            />
-          </>
-        ) : null}
-      </section>
-    </main>
+    <article className="order-alert-200">
+      {isVisible ? (
+        <>
+          <div className="order-alert-200__toast">
+            <span>{alert.buyerDisplayName}</span> just ordered!
+          </div>
+          <video
+            className="order-alert-200__video"
+            src="/pack-palace-200-order.mp4"
+            autoPlay
+            muted
+            playsInline
+            onEnded={() => setIsVisible(false)}
+          />
+        </>
+      ) : null}
+    </article>
   );
 }
 
