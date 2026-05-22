@@ -346,7 +346,7 @@ function PackPalace200AlertCard({ alert }: { alert: OrderAlert }) {
           </div>
           <video
             className="order-alert-200__video"
-            src="/pack-palace-200-order.mp4"
+            src="/pack-palace-200-order.webm"
             autoPlay
             muted
             playsInline
