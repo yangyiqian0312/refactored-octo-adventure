@@ -467,7 +467,7 @@ body {
 .order-alert-200__toast {
   position: absolute;
   left: 50%;
-  top: 2vh;
+  top: 0;
   z-index: 2;
   min-width: min(500px, 68vw);
   max-width: min(660px, 78vw);
