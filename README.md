@@ -141,7 +141,7 @@ For the configured shop/warehouse pairs, every new `AWAITING_SHIPMENT` order emi
 7495180900215261343 / 7263214411597498155
 ```
 
-The label contains only SKU id, product name, user id, and the last five digits of the order id.
+The label contains only SKU name, product name, buyer nickname, and the last five digits of the order id.
 
 ## Free Deployment Shape
 

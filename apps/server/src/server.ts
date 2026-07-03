@@ -129,9 +129,9 @@ export async function createApp(config: AppConfig): Promise<AppContext> {
         shopIdOverride: input.shopId,
         printFields: {
           warehouseId: input.warehouseId,
-          skuId: input.skuId,
+          skuName: input.skuName ?? input.skuId,
           productName: input.productTitle,
-          userId: input.userId
+          buyerNickname: input.buyerNickname ?? input.buyerName ?? input.userId
         },
         io
       });
@@ -543,9 +543,9 @@ function emitLabelPrintJobIfNeeded({
   shopIdOverride?: string | undefined;
   printFields: {
     warehouseId: string | undefined;
-    skuId: string | undefined;
+    skuName: string | undefined;
     productName: string | undefined;
-    userId: string | undefined;
+    buyerNickname: string | undefined;
   };
   io: SocketIOServer;
 }): void {
@@ -557,17 +557,17 @@ function emitLabelPrintJobIfNeeded({
   if (
     !matchingRule ||
     !alert.orderId ||
-    !printFields.skuId ||
+    !printFields.skuName ||
     !printFields.productName ||
-    !printFields.userId
+    !printFields.buyerNickname
   ) {
     logger.info("label print job skipped", {
       storeId: storeConfig.id,
       shopId,
       orderId: alert.orderId,
-      hasSkuId: Boolean(printFields.skuId),
+      hasSkuName: Boolean(printFields.skuName),
       hasProductName: Boolean(printFields.productName),
-      hasUserId: Boolean(printFields.userId),
+      hasBuyerNickname: Boolean(printFields.buyerNickname),
       warehouseId: printFields.warehouseId,
       printRuleMatched: Boolean(matchingRule)
     });
@@ -587,9 +587,9 @@ function emitLabelPrintJobIfNeeded({
     storeId: storeConfig.id,
     shopId: matchingRule.shopId,
     orderId: alert.orderId,
-    skuId: printFields.skuId,
+    skuName: printFields.skuName,
     productName: printFields.productName,
-    userId: printFields.userId,
+    buyerNickname: printFields.buyerNickname,
     createdAt: new Date().toISOString()
   } satisfies LabelPrintJob);
 
@@ -604,15 +604,15 @@ function emitLabelPrintJobIfNeeded({
 
 function printFieldsFromOrderDetails(details: TikTokOrderDetails | undefined): {
   warehouseId: string | undefined;
-  skuId: string | undefined;
+  skuName: string | undefined;
   productName: string | undefined;
-  userId: string | undefined;
+  buyerNickname: string | undefined;
 } {
   return {
     warehouseId: details?.warehouseId,
-    skuId: details?.skuId,
+    skuName: details?.skuName ?? details?.productTitle,
     productName: details?.productTitle,
-    userId: details?.userId
+    buyerNickname: details?.buyerNickname ?? details?.buyerDisplayName
   };
 }
 

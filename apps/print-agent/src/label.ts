@@ -1,8 +1,6 @@
 import type { LabelPrintJob } from "@live-alerts/shared";
 
 export function renderRolloLabelHtml(job: LabelPrintJob, qrImagePath?: string): string {
-  const order = formatShortOrderId(job.orderId);
-
   return `<!doctype html>
 <html>
 <head>
@@ -52,10 +50,10 @@ export function renderRolloLabelHtml(job: LabelPrintJob, qrImagePath?: string): 
 </head>
 <body>
   <main class="label">
-    <div class="line">SKU ${escapeHtml(job.skuId)}</div>
-    <div class="line">USER ${escapeHtml(job.userId)}</div>
+    <div class="line">${escapeHtml(job.orderId)}</div>
+    <div class="line">BUYER ${escapeHtml(job.buyerNickname)}</div>
     <div class="line">${escapeHtml(job.productName)}</div>
-    <div class="line order">${escapeHtml(order)}</div>
+    <div class="line order">#${escapeHtml(job.skuName)}</div>
   </main>
 </body>
 </html>`;

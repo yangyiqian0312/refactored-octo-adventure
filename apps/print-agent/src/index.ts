@@ -5,7 +5,7 @@ import { mkdir, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { io } from "socket.io-client";
-import { formatShortOrderId, renderRolloLabelHtml, shortOrderId } from "./label.js";
+import { renderRolloLabelHtml, shortOrderId } from "./label.js";
 
 const serverUrl = process.env.PRINT_AGENT_SERVER_URL ?? "https://tiktok-shop-live-alert-server.onrender.com";
 const token = process.env.PRINT_AGENT_TOKEN ?? process.env.OVERLAY_ALLOWED_TOKEN ?? "otaku-overlay-token";
@@ -70,7 +70,7 @@ async function printLabelOnWindows(job: LabelPrintJob): Promise<void> {
   }
 
   const script = [
-    "param([string]$skuId, [string]$productName, [string]$userId, [string]$orderId)",
+    "param([string]$skuName, [string]$productName, [string]$buyerNickname, [string]$orderId)",
     "Add-Type -AssemblyName System.Drawing;",
     "$doc = New-Object System.Drawing.Printing.PrintDocument;",
     "$doc.DocumentName = 'Live Order Label';",
@@ -90,10 +90,10 @@ async function printLabelOnWindows(job: LabelPrintJob): Promise<void> {
     "$format = New-Object System.Drawing.StringFormat;",
     "$format.Trimming = [System.Drawing.StringTrimming]::EllipsisCharacter;",
     "$format.FormatFlags = [System.Drawing.StringFormatFlags]::NoWrap;",
-    "$graphics.DrawString(('SKU ' + $skuId), $smallFont, $black, (New-Object System.Drawing.RectangleF(8, 8, 184, 13)), $format);",
-    "$graphics.DrawString(('USER ' + $userId), $smallFont, $black, (New-Object System.Drawing.RectangleF(8, 24, 184, 13)), $format);",
+    "$graphics.DrawString($orderId, $smallFont, $black, (New-Object System.Drawing.RectangleF(8, 8, 184, 13)), $format);",
+    "$graphics.DrawString(('BUYER ' + $buyerNickname), $smallFont, $black, (New-Object System.Drawing.RectangleF(8, 24, 184, 13)), $format);",
     "$graphics.DrawString($productName, $productFont, $black, (New-Object System.Drawing.RectangleF(8, 40, 184, 16)), $format);",
-    "$graphics.DrawString($orderId, $orderFont, $black, (New-Object System.Drawing.RectangleF(8, 62, 184, 24)), $format);",
+    "$graphics.DrawString(('#' + $skuName), $orderFont, $black, (New-Object System.Drawing.RectangleF(8, 62, 184, 24)), $format);",
     "$event.HasMorePages = $false;",
     "});",
     "$doc.Print();"
@@ -111,10 +111,10 @@ async function printLabelOnWindows(job: LabelPrintJob): Promise<void> {
         "Bypass",
         "-File",
         scriptPath,
-        job.skuId,
+        job.skuName,
         job.productName,
-        job.userId,
-        formatShortOrderId(job.orderId),
+        job.buyerNickname,
+        job.orderId,
       ],
       { windowsHide: true },
       (error) => {

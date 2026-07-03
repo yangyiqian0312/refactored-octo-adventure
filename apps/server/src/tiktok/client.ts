@@ -10,7 +10,9 @@ export type TikTokOrderDetails = {
   orderTotalAmount?: number;
   orderTotalCurrency?: string;
   skuId?: string;
+  skuName?: string;
   userId?: string;
+  buyerNickname?: string;
   warehouseId?: string;
 };
 
@@ -263,6 +265,14 @@ function normalizeOrderDetail(orderId: string, order: Record<string, unknown>): 
         stringValue(buyerInfo.display_name) ??
         stringValue(buyerInfo.displayName)
       : undefined);
+  const buyerNickname =
+    stringValue(order.buyer_nickname) ??
+    stringValue(order.buyerNickname) ??
+    (buyerInfo
+      ? stringValue(buyerInfo.nickname) ??
+        stringValue(buyerInfo.buyer_nickname) ??
+        stringValue(buyerInfo.buyerNickname)
+      : undefined);
   const imageUrl =
     stringValue(firstLineItem.sku_image) ??
     stringValue(firstLineItem.skuImage) ??
@@ -271,6 +281,10 @@ function normalizeOrderDetail(orderId: string, order: Record<string, unknown>): 
 
   if (buyerDisplayName) {
     details.buyerDisplayName = buyerDisplayName;
+  }
+
+  if (buyerNickname) {
+    details.buyerNickname = buyerNickname;
   }
 
   if (imageUrl) {
@@ -282,6 +296,11 @@ function normalizeOrderDetail(orderId: string, order: Record<string, unknown>): 
     stringValue(firstLineItem.skuId) ??
     stringValue(order.sku_id) ??
     stringValue(order.skuId);
+  const skuName =
+    stringValue(firstLineItem.sku_name) ??
+    stringValue(firstLineItem.skuName) ??
+    stringValue(order.sku_name) ??
+    stringValue(order.skuName);
   const userId =
     stringValue(order.user_id) ??
     stringValue(order.userId) ??
@@ -295,6 +314,10 @@ function normalizeOrderDetail(orderId: string, order: Record<string, unknown>): 
 
   if (skuId) {
     details.skuId = skuId;
+  }
+
+  if (skuName) {
+    details.skuName = skuName;
   }
 
   if (userId) {

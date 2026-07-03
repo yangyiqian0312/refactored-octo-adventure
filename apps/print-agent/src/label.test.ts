@@ -8,17 +8,17 @@ describe("renderRolloLabelHtml", () => {
       storeId: "store2",
       shopId: "7495210574874380572",
       orderId: "577387538643456175",
-      skuId: "2729382476852921560",
+      skuName: "ME03 Perfect Order",
       productName: "Pokemon Booster Pack",
-      userId: "7021436810468230477",
+      buyerNickname: "buyer123",
       createdAt: new Date().toISOString()
     });
 
     expect(html).toContain("size: 2in 1in");
-    expect(html).toContain("SKU 2729382476852921560");
+    expect(html).toContain("577387538643456175");
     expect(html).toContain("Pokemon Booster Pack");
-    expect(html).toContain("USER 7021436810468230477");
-    expect(html).toContain("#56175");
+    expect(html).toContain("BUYER buyer123");
+    expect(html).toContain("#ME03 Perfect Order");
   });
 });
 
