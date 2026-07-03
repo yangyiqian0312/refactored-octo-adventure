@@ -9,6 +9,9 @@ export type TikTokOrderDetails = {
   imageUrl?: string;
   orderTotalAmount?: number;
   orderTotalCurrency?: string;
+  skuId?: string;
+  userId?: string;
+  warehouseId?: string;
 };
 
 export type TikTokOrderDetailShape = {
@@ -272,6 +275,34 @@ function normalizeOrderDetail(orderId: string, order: Record<string, unknown>): 
 
   if (imageUrl) {
     details.imageUrl = imageUrl;
+  }
+
+  const skuId =
+    stringValue(firstLineItem.sku_id) ??
+    stringValue(firstLineItem.skuId) ??
+    stringValue(order.sku_id) ??
+    stringValue(order.skuId);
+  const userId =
+    stringValue(order.user_id) ??
+    stringValue(order.userId) ??
+    stringValue(buyerInfo?.user_id) ??
+    stringValue(buyerInfo?.userId);
+  const warehouseId =
+    stringValue(order.warehouse_id) ??
+    stringValue(order.warehouseId) ??
+    stringValue(firstLineItem.warehouse_id) ??
+    stringValue(firstLineItem.warehouseId);
+
+  if (skuId) {
+    details.skuId = skuId;
+  }
+
+  if (userId) {
+    details.userId = userId;
+  }
+
+  if (warehouseId) {
+    details.warehouseId = warehouseId;
   }
 
   const paymentInfo =

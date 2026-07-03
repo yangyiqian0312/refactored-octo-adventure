@@ -30,13 +30,18 @@ export const labelPrintJobSchema = z.object({
   storeId: z.string().min(1),
   shopId: z.string().min(1),
   orderId: z.string().min(1),
-  buyerDisplayName: z.string().min(1).default("Someone"),
+  skuId: z.string().min(1),
+  productName: z.string().min(1),
+  userId: z.string().min(1),
   createdAt: z.string().datetime()
 });
 
 export const testOrderRequestSchema = z.object({
   orderId: z.string().trim().min(1).max(80).optional(),
   shopId: z.string().trim().min(1).max(80).optional(),
+  warehouseId: z.string().trim().min(1).max(80).optional(),
+  skuId: z.string().trim().min(1).max(120).optional(),
+  userId: z.string().trim().min(1).max(120).optional(),
   buyerName: z.string().trim().min(1).max(64).optional(),
   productTitle: z.string().trim().min(1).max(160),
   quantity: z.number().int().positive().max(999),

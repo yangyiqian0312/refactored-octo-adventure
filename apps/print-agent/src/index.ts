@@ -5,7 +5,7 @@ import { mkdir, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { io } from "socket.io-client";
-import { renderRolloLabelHtml, shortOrderId } from "./label.js";
+import { formatShortOrderId, renderRolloLabelHtml, shortOrderId } from "./label.js";
 
 const serverUrl = process.env.PRINT_AGENT_SERVER_URL ?? "https://tiktok-shop-live-alert-server.onrender.com";
 const token = process.env.PRINT_AGENT_TOKEN ?? process.env.OVERLAY_ALLOWED_TOKEN ?? "otaku-overlay-token";
@@ -47,11 +47,11 @@ socket.on("label:print", (payload: unknown) => {
 });
 
 async function printLabel(job: LabelPrintJob): Promise<void> {
-  const filePath = path.join(outputDir, `rollo-${safeFilePart(shortOrderId(job.orderId))}.html`);
+  const filePrefix = `rollo-${safeFilePart(shortOrderId(job.orderId))}`;
+  const filePath = path.join(outputDir, `${filePrefix}.html`);
 
   await writeFile(filePath, renderRolloLabelHtml(job), "utf8");
   log("label generated", {
-    buyerDisplayName: job.buyerDisplayName,
     orderId: job.orderId,
     filePath
   });
@@ -60,14 +60,47 @@ async function printLabel(job: LabelPrintJob): Promise<void> {
     return;
   }
 
-  await printHtmlOnWindows(filePath);
+  await printLabelOnWindows(job);
   log("label sent to default printer", { orderId: job.orderId });
 }
 
-async function printHtmlOnWindows(filePath: string): Promise<void> {
+async function printLabelOnWindows(job: LabelPrintJob): Promise<void> {
   if (process.platform !== "win32") {
     throw new Error("Automatic printing is currently implemented for Windows only.");
   }
+
+  const script = [
+    "param([string]$skuId, [string]$productName, [string]$userId, [string]$orderId)",
+    "Add-Type -AssemblyName System.Drawing;",
+    "$doc = New-Object System.Drawing.Printing.PrintDocument;",
+    "$doc.DocumentName = 'Live Order Label';",
+    "$doc.DefaultPageSettings.PaperSize = New-Object System.Drawing.Printing.PaperSize('2x1', 100, 200);",
+    "$doc.DefaultPageSettings.Landscape = $true;",
+    "$doc.DefaultPageSettings.Margins = New-Object System.Drawing.Printing.Margins(0, 0, 0, 0);",
+    "$doc.add_PrintPage({",
+    "param($sender, $event);",
+    "$graphics = $event.Graphics;",
+    "$graphics.PageUnit = [System.Drawing.GraphicsUnit]::Display;",
+    "$graphics.SmoothingMode = [System.Drawing.Drawing2D.SmoothingMode]::None;",
+    "$graphics.TextRenderingHint = [System.Drawing.Text.TextRenderingHint]::SingleBitPerPixelGridFit;",
+    "$black = [System.Drawing.Brushes]::Black;",
+    "$smallFont = New-Object System.Drawing.Font('Arial', 7, [System.Drawing.FontStyle]::Bold);",
+    "$productFont = New-Object System.Drawing.Font('Arial', 8, [System.Drawing.FontStyle]::Bold);",
+    "$orderFont = New-Object System.Drawing.Font('Arial', 14, [System.Drawing.FontStyle]::Bold);",
+    "$format = New-Object System.Drawing.StringFormat;",
+    "$format.Trimming = [System.Drawing.StringTrimming]::EllipsisCharacter;",
+    "$format.FormatFlags = [System.Drawing.StringFormatFlags]::NoWrap;",
+    "$graphics.DrawString(('SKU ' + $skuId), $smallFont, $black, (New-Object System.Drawing.RectangleF(8, 8, 184, 13)), $format);",
+    "$graphics.DrawString(('USER ' + $userId), $smallFont, $black, (New-Object System.Drawing.RectangleF(8, 24, 184, 13)), $format);",
+    "$graphics.DrawString($productName, $productFont, $black, (New-Object System.Drawing.RectangleF(8, 40, 184, 16)), $format);",
+    "$graphics.DrawString($orderId, $orderFont, $black, (New-Object System.Drawing.RectangleF(8, 62, 184, 24)), $format);",
+    "$event.HasMorePages = $false;",
+    "});",
+    "$doc.Print();"
+  ].join("\n");
+  const scriptPath = path.join(outputDir, "print-rollo-label.ps1");
+
+  await writeFile(scriptPath, script, "utf8");
 
   await new Promise<void>((resolve, reject) => {
     execFile(
@@ -76,9 +109,12 @@ async function printHtmlOnWindows(filePath: string): Promise<void> {
         "-NoProfile",
         "-ExecutionPolicy",
         "Bypass",
-        "-Command",
-        "Start-Process -FilePath $args[0] -Verb Print -WindowStyle Hidden",
-        filePath
+        "-File",
+        scriptPath,
+        job.skuId,
+        job.productName,
+        job.userId,
+        formatShortOrderId(job.orderId),
       ],
       { windowsHide: true },
       (error) => {

@@ -114,6 +114,9 @@ Render cannot directly access a local Rollo printer. Run the local print agent o
 
 ```bash
 LABEL_PRINT_SHOP_ID=7495210574874380572
+LABEL_PRINT_WAREHOUSE_ID=7581531451641317175
+LABEL_PRINT_SHOP_ID_2=7495180900215261343
+LABEL_PRINT_WAREHOUSE_ID_2=7263214411597498155
 PRINT_AGENT_SERVER_URL=https://tiktok-shop-live-alert-server.onrender.com
 PRINT_AGENT_TOKEN=otaku-overlay-token
 PRINT_AGENT_DRY_RUN=true
@@ -131,7 +134,14 @@ With `PRINT_AGENT_DRY_RUN=true`, the agent only writes label HTML files to your 
 PRINT_AGENT_DRY_RUN=false
 ```
 
-For shop `7495210574874380572`, every new `AWAITING_SHIPMENT` order emits a `label:print` event. The label contains only the buyer display name and order id.
+For the configured shop/warehouse pairs, every new `AWAITING_SHIPMENT` order emits one `label:print` event per order. The default pairs are:
+
+```text
+7495210574874380572 / 7581531451641317175
+7495180900215261343 / 7263214411597498155
+```
+
+The label contains only SKU id, product name, user id, and the last five digits of the order id.
 
 ## Free Deployment Shape
 

@@ -1,6 +1,8 @@
 import type { LabelPrintJob } from "@live-alerts/shared";
 
-export function renderRolloLabelHtml(job: LabelPrintJob): string {
+export function renderRolloLabelHtml(job: LabelPrintJob, qrImagePath?: string): string {
+  const order = formatShortOrderId(job.orderId);
+
   return `<!doctype html>
 <html>
 <head>
@@ -30,12 +32,12 @@ export function renderRolloLabelHtml(job: LabelPrintJob): string {
       padding: 0.09in 0.1in;
       display: grid;
       align-content: center;
-      gap: 0.05in;
+      gap: 0.025in;
       border: 0.015in solid #000;
     }
 
-    .name {
-      font-size: 18pt;
+    .line {
+      font-size: 9pt;
       line-height: 1;
       font-weight: 800;
       white-space: nowrap;
@@ -44,27 +46,32 @@ export function renderRolloLabelHtml(job: LabelPrintJob): string {
     }
 
     .order {
-      font-size: 11pt;
-      line-height: 1;
-      font-weight: 700;
-      letter-spacing: 0.01in;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
+      font-size: 13pt;
     }
   </style>
 </head>
 <body>
   <main class="label">
-    <div class="name">${escapeHtml(job.buyerDisplayName)}</div>
-    <div class="order">ORDER ${escapeHtml(job.orderId)}</div>
+    <div class="line">SKU ${escapeHtml(job.skuId)}</div>
+    <div class="line">USER ${escapeHtml(job.userId)}</div>
+    <div class="line">${escapeHtml(job.productName)}</div>
+    <div class="line order">${escapeHtml(order)}</div>
   </main>
 </body>
 </html>`;
 }
 
+export function formatBuyerId(buyerDisplayName: string): string {
+  const trimmed = buyerDisplayName.trim();
+  return trimmed.startsWith("@") ? trimmed : `@${trimmed}`;
+}
+
+export function formatShortOrderId(orderId: string): string {
+  return `#${shortOrderId(orderId)}`;
+}
+
 export function shortOrderId(orderId: string): string {
-  return orderId.length > 8 ? orderId.slice(-8) : orderId;
+  return orderId.length > 5 ? orderId.slice(-5) : orderId;
 }
 
 function escapeHtml(value: string): string {

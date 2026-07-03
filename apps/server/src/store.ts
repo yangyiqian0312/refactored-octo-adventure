@@ -12,6 +12,7 @@ export class InMemoryOrderStore {
   private readonly rawWebhookEvents: RawWebhookEvent[] = [];
   private readonly pendingOrders = new Map<string, OrderQueueItem>();
   private readonly dedupeKeys = new Set<string>();
+  private readonly printedLabelOrderIds = new Set<string>();
 
   constructor(private readonly maxItems = 50) {}
 
@@ -21,6 +22,15 @@ export class InMemoryOrderStore {
 
   rememberDedupeKey(key: string): void {
     this.dedupeKeys.add(key);
+  }
+
+  markLabelPrinted(orderId: string): boolean {
+    if (this.printedLabelOrderIds.has(orderId)) {
+      return false;
+    }
+
+    this.printedLabelOrderIds.add(orderId);
+    return true;
   }
 
   addAlert(alert: OrderAlert): void {

@@ -55,7 +55,9 @@ describe("LabelPrintJob schema", () => {
       storeId: "store2",
       shopId: "7495210574874380572",
       orderId: "577387538643456175",
-      buyerDisplayName: "dannyboy1097",
+      skuId: "2729382476852921560",
+      productName: "Pokemon Booster Pack",
+      userId: "7021436810468230477",
       createdAt: new Date().toISOString()
     });
 

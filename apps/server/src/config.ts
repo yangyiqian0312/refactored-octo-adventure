@@ -15,8 +15,13 @@ export type AppConfig = {
   tiktokRefreshToken: string | undefined;
   tiktokWebhookSecret: string | undefined;
   tiktokWebhookVerifyBypass: boolean;
-  labelPrintShopId: string | undefined;
+  labelPrintRules: LabelPrintRule[];
   hasTikTokCredentials: boolean;
+};
+
+export type LabelPrintRule = {
+  shopId: string;
+  warehouseId: string;
 };
 
 export type TikTokStoreConfig = {
@@ -70,7 +75,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     tiktokRefreshToken: env.TIKTOK_REFRESH_TOKEN || undefined,
     tiktokWebhookSecret: env.TIKTOK_WEBHOOK_SECRET || undefined,
     tiktokWebhookVerifyBypass: env.TIKTOK_WEBHOOK_VERIFY_BYPASS === "true",
-    labelPrintShopId: env.LABEL_PRINT_SHOP_ID || "7495210574874380572",
+    labelPrintRules: buildLabelPrintRules(env),
     hasTikTokCredentials: Boolean(
       env.TIKTOK_APP_KEY &&
         env.TIKTOK_APP_SECRET &&
@@ -78,6 +83,23 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
         env.TIKTOK_ACCESS_TOKEN
     )
   };
+}
+
+function buildLabelPrintRules(env: NodeJS.ProcessEnv): LabelPrintRule[] {
+  const candidates = [
+    {
+      shopId: env.LABEL_PRINT_SHOP_ID || "7495210574874380572",
+      warehouseId: env.LABEL_PRINT_WAREHOUSE_ID || "7581531451641317175"
+    },
+    {
+      shopId: env.LABEL_PRINT_SHOP_ID_2 || "7495180900215261343",
+      warehouseId: env.LABEL_PRINT_WAREHOUSE_ID_2 || "7263214411597498155"
+    }
+  ];
+
+  return candidates.filter((rule): rule is LabelPrintRule =>
+    Boolean(rule.shopId && rule.warehouseId)
+  );
 }
 
 function buildStoreConfig({

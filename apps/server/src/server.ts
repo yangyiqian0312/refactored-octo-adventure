@@ -12,7 +12,7 @@ import {
 import Fastify, { type FastifyInstance } from "fastify";
 import { Server as SocketIOServer } from "socket.io";
 import { z, ZodError } from "zod";
-import type { AppConfig, TikTokStoreConfig } from "./config.js";
+import type { AppConfig, LabelPrintRule, TikTokStoreConfig } from "./config.js";
 import { logger } from "./logger.js";
 import { InMemoryOrderStore } from "./store.js";
 import {
@@ -29,7 +29,8 @@ import {
   PlaceholderTikTokOrderClient,
   TikTokApiError,
   TikTokShopOrderClient,
-  type TikTokOrderClient
+  type TikTokOrderClient,
+  type TikTokOrderDetails
 } from "./tiktok/client.js";
 import { exchangeTikTokAuthCode, getTikTokAuthorizedShops } from "./tiktok/auth.js";
 import { tiktokWebhookPayloadSchema } from "./tiktok/types.js";
@@ -121,10 +122,17 @@ export async function createApp(config: AppConfig): Promise<AppContext> {
       targetStore.addAlert(alert);
       io.to(roomForStore(storeConfig.id)).emit("order:created", alert);
       emitLabelPrintJobIfNeeded({
-        labelPrintShopId: config.labelPrintShopId,
+        labelPrintRules: config.labelPrintRules,
         storeConfig,
+        store: targetStore,
         alert,
         shopIdOverride: input.shopId,
+        printFields: {
+          warehouseId: input.warehouseId,
+          skuId: input.skuId,
+          productName: input.productTitle,
+          userId: input.userId
+        },
         io
       });
       logger.info("test order alert created", {
@@ -394,7 +402,7 @@ export async function createApp(config: AppConfig): Promise<AppContext> {
         tiktokOrderClient: getTikTokClient(tiktokOrderClients, storeConfig.id),
         store: targetStore,
         io,
-        labelPrintShopId: config.labelPrintShopId
+        labelPrintRules: config.labelPrintRules
       });
     });
 
@@ -520,30 +528,68 @@ function roomForStore(storeId: string): string {
 }
 
 function emitLabelPrintJobIfNeeded({
-  labelPrintShopId,
+  labelPrintRules,
   storeConfig,
+  store,
   alert,
   shopIdOverride,
+  printFields,
   io
 }: {
-  labelPrintShopId: string | undefined;
+  labelPrintRules: LabelPrintRule[];
   storeConfig: TikTokStoreConfig;
+  store: InMemoryOrderStore;
   alert: OrderAlert;
   shopIdOverride?: string | undefined;
+  printFields: {
+    warehouseId: string | undefined;
+    skuId: string | undefined;
+    productName: string | undefined;
+    userId: string | undefined;
+  };
   io: SocketIOServer;
 }): void {
   const shopId = shopIdOverride ?? storeConfig.tiktokShopId;
+  const matchingRule = labelPrintRules.find((rule) =>
+    rule.shopId === shopId && rule.warehouseId === printFields.warehouseId
+  );
 
-  if (!labelPrintShopId || shopId !== labelPrintShopId || !alert.orderId) {
+  if (
+    !matchingRule ||
+    !alert.orderId ||
+    !printFields.skuId ||
+    !printFields.productName ||
+    !printFields.userId
+  ) {
+    logger.info("label print job skipped", {
+      storeId: storeConfig.id,
+      shopId,
+      orderId: alert.orderId,
+      hasSkuId: Boolean(printFields.skuId),
+      hasProductName: Boolean(printFields.productName),
+      hasUserId: Boolean(printFields.userId),
+      warehouseId: printFields.warehouseId,
+      printRuleMatched: Boolean(matchingRule)
+    });
+    return;
+  }
+
+  if (!store.markLabelPrinted(alert.orderId)) {
+    logger.info("label print duplicate skipped", {
+      storeId: storeConfig.id,
+      orderId: alert.orderId
+    });
     return;
   }
 
   const job = labelPrintJobSchema.parse({
     id: crypto.randomUUID(),
     storeId: storeConfig.id,
-    shopId,
+    shopId: matchingRule.shopId,
     orderId: alert.orderId,
-    buyerDisplayName: alert.buyerDisplayName,
+    skuId: printFields.skuId,
+    productName: printFields.productName,
+    userId: printFields.userId,
     createdAt: new Date().toISOString()
   } satisfies LabelPrintJob);
 
@@ -554,6 +600,20 @@ function emitLabelPrintJobIfNeeded({
     shopId: job.shopId,
     orderId: job.orderId
   });
+}
+
+function printFieldsFromOrderDetails(details: TikTokOrderDetails | undefined): {
+  warehouseId: string | undefined;
+  skuId: string | undefined;
+  productName: string | undefined;
+  userId: string | undefined;
+} {
+  return {
+    warehouseId: details?.warehouseId,
+    skuId: details?.skuId,
+    productName: details?.productTitle,
+    userId: details?.userId
+  };
 }
 
 function renderOAuthSuccessPage(
@@ -679,7 +739,7 @@ async function processTikTokWebhookEvent({
   tiktokOrderClient,
   store,
   io,
-  labelPrintShopId
+  labelPrintRules
 }: {
   payload: Record<string, unknown>;
   eventId: string;
@@ -690,7 +750,7 @@ async function processTikTokWebhookEvent({
   tiktokOrderClient: TikTokOrderClient;
   store: InMemoryOrderStore;
   io: SocketIOServer;
-  labelPrintShopId: string | undefined;
+  labelPrintRules: LabelPrintRule[];
 }): Promise<void> {
   try {
     if (!shouldCreateAlertForTikTokStatus(orderStatus)) {
@@ -747,9 +807,11 @@ async function processTikTokWebhookEvent({
 
     io.to(roomForStore(storeConfig.id)).emit("order:created", alert);
     emitLabelPrintJobIfNeeded({
-      labelPrintShopId,
+      labelPrintRules,
       storeConfig,
+      store,
       alert,
+      printFields: printFieldsFromOrderDetails(details),
       io
     });
     logger.info("tiktok order alert created", {
