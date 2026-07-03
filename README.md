@@ -76,6 +76,7 @@ pnpm build
 pnpm test
 pnpm lint
 pnpm typecheck
+pnpm print-agent
 ```
 
 ## Environment
@@ -102,6 +103,35 @@ The webhook route exists and is safe for local unsigned payloads only when bypas
 Order detail lookup is represented by `apps/server/src/tiktok/client.ts` and must be completed with official endpoint paths, request signing, headers, rate-limit behavior, and response schemas.
 
 More notes: [docs/TIKTOK_INTEGRATION.md](docs/TIKTOK_INTEGRATION.md).
+
+## Local Rollo Label Printing
+
+Render cannot directly access a local Rollo printer. Run the local print agent on the Windows computer that has the Rollo driver installed.
+
+1. Set the Rollo printer as the Windows default printer.
+2. In the Rollo printer preferences, set the label size to `2 x 1 in`.
+3. Configure `.env`:
+
+```bash
+LABEL_PRINT_SHOP_ID=7495210574874380572
+PRINT_AGENT_SERVER_URL=https://tiktok-shop-live-alert-server.onrender.com
+PRINT_AGENT_TOKEN=otaku-overlay-token
+PRINT_AGENT_DRY_RUN=true
+```
+
+4. Start the agent:
+
+```bash
+pnpm print-agent
+```
+
+With `PRINT_AGENT_DRY_RUN=true`, the agent only writes label HTML files to your temp folder. After confirming the label looks right, set:
+
+```bash
+PRINT_AGENT_DRY_RUN=false
+```
+
+For shop `7495210574874380572`, every new `AWAITING_SHIPMENT` order emits a `label:print` event. The label contains only the buyer display name and order id.
 
 ## Free Deployment Shape
 

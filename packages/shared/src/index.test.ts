@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { calculateOrderTier, orderAlertSchema } from "./index.js";
+import { calculateOrderTier, labelPrintJobSchema, orderAlertSchema } from "./index.js";
 
 describe("OrderAlert schema", () => {
   it("accepts a valid alert", () => {
@@ -45,5 +45,20 @@ describe("calculateOrderTier", () => {
     [25, "mega"]
   ] as const)("maps %s to %s", (quantity, tier) => {
     expect(calculateOrderTier(quantity)).toBe(tier);
+  });
+});
+
+describe("LabelPrintJob schema", () => {
+  it("accepts a valid safe label print job", () => {
+    const job = labelPrintJobSchema.parse({
+      id: "print_123",
+      storeId: "store2",
+      shopId: "7495210574874380572",
+      orderId: "577387538643456175",
+      buyerDisplayName: "dannyboy1097",
+      createdAt: new Date().toISOString()
+    });
+
+    expect(job.shopId).toBe("7495210574874380572");
   });
 });

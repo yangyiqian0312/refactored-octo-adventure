@@ -10,7 +10,8 @@
     "build": "corepack pnpm -r build",
     "test": "corepack pnpm -r test",
     "lint": "corepack pnpm -r lint",
-    "typecheck": "corepack pnpm -r typecheck"
+    "typecheck": "corepack pnpm -r typecheck",
+    "print-agent": "corepack pnpm --filter @live-alerts/print-agent dev"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.1",

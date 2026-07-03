@@ -25,7 +25,17 @@ export const orderQueueItemSchema = z.object({
   updatedAt: z.string().datetime()
 });
 
+export const labelPrintJobSchema = z.object({
+  id: z.string().min(1),
+  storeId: z.string().min(1),
+  shopId: z.string().min(1),
+  orderId: z.string().min(1),
+  buyerDisplayName: z.string().min(1).default("Someone"),
+  createdAt: z.string().datetime()
+});
+
 export const testOrderRequestSchema = z.object({
+  orderId: z.string().trim().min(1).max(80).optional(),
   buyerName: z.string().trim().min(1).max(64).optional(),
   productTitle: z.string().trim().min(1).max(160),
   quantity: z.number().int().positive().max(999),
@@ -37,6 +47,7 @@ export const testOrderRequestSchema = z.object({
 export type OrderAlertTier = z.infer<typeof orderAlertTierSchema>;
 export type OrderAlert = z.infer<typeof orderAlertSchema>;
 export type OrderQueueItem = z.infer<typeof orderQueueItemSchema>;
+export type LabelPrintJob = z.infer<typeof labelPrintJobSchema>;
 export type TestOrderRequest = z.infer<typeof testOrderRequestSchema>;
 
 export function calculateOrderTier(quantity: number): OrderAlertTier {

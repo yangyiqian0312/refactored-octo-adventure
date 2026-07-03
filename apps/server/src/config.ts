@@ -15,6 +15,7 @@ export type AppConfig = {
   tiktokRefreshToken: string | undefined;
   tiktokWebhookSecret: string | undefined;
   tiktokWebhookVerifyBypass: boolean;
+  labelPrintShopId: string | undefined;
   hasTikTokCredentials: boolean;
 };
 
@@ -69,6 +70,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     tiktokRefreshToken: env.TIKTOK_REFRESH_TOKEN || undefined,
     tiktokWebhookSecret: env.TIKTOK_WEBHOOK_SECRET || undefined,
     tiktokWebhookVerifyBypass: env.TIKTOK_WEBHOOK_VERIFY_BYPASS === "true",
+    labelPrintShopId: env.LABEL_PRINT_SHOP_ID || "7495210574874380572",
     hasTikTokCredentials: Boolean(
       env.TIKTOK_APP_KEY &&
         env.TIKTOK_APP_SECRET &&

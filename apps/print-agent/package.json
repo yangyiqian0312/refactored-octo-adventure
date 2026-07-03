@@ -1,0 +1,23 @@
+{
+  "name": "@live-alerts/print-agent",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx src/index.ts",
+    "build": "tsc -p tsconfig.json",
+    "start": "node dist/index.js",
+    "test": "vitest run",
+    "lint": "eslint .",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@live-alerts/shared": "workspace:*",
+    "dotenv": "^16.6.1",
+    "socket.io-client": "^4.8.1"
+  },
+  "devDependencies": {
+    "tsx": "^4.20.6",
+    "vitest": "^2.1.9"
+  }
+}
