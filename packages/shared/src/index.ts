@@ -36,6 +36,7 @@ export const labelPrintJobSchema = z.object({
 
 export const testOrderRequestSchema = z.object({
   orderId: z.string().trim().min(1).max(80).optional(),
+  shopId: z.string().trim().min(1).max(80).optional(),
   buyerName: z.string().trim().min(1).max(64).optional(),
   productTitle: z.string().trim().min(1).max(160),
   quantity: z.number().int().positive().max(999),

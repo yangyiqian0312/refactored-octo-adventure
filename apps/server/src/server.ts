@@ -124,6 +124,7 @@ export async function createApp(config: AppConfig): Promise<AppContext> {
         labelPrintShopId: config.labelPrintShopId,
         storeConfig,
         alert,
+        shopIdOverride: input.shopId,
         io
       });
       logger.info("test order alert created", {
@@ -522,21 +523,25 @@ function emitLabelPrintJobIfNeeded({
   labelPrintShopId,
   storeConfig,
   alert,
+  shopIdOverride,
   io
 }: {
   labelPrintShopId: string | undefined;
   storeConfig: TikTokStoreConfig;
   alert: OrderAlert;
+  shopIdOverride?: string | undefined;
   io: SocketIOServer;
 }): void {
-  if (!labelPrintShopId || storeConfig.tiktokShopId !== labelPrintShopId || !alert.orderId) {
+  const shopId = shopIdOverride ?? storeConfig.tiktokShopId;
+
+  if (!labelPrintShopId || shopId !== labelPrintShopId || !alert.orderId) {
     return;
   }
 
   const job = labelPrintJobSchema.parse({
     id: crypto.randomUUID(),
     storeId: storeConfig.id,
-    shopId: storeConfig.tiktokShopId,
+    shopId,
     orderId: alert.orderId,
     buyerDisplayName: alert.buyerDisplayName,
     createdAt: new Date().toISOString()
