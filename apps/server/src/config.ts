@@ -45,20 +45,13 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     appKey: env.TIKTOK_APP_KEY,
     appSecret: env.TIKTOK_APP_SECRET
   });
-  const storeTwoOverlayToken = env.TIKTOK_STORE2_OVERLAY_TOKEN ?? env.OVERLAY_ALLOWED_TOKEN_STORE2;
-  const storeTwo = storeTwoOverlayToken
-    ? buildStoreConfig({
-        id: "store2",
-        overlayToken: storeTwoOverlayToken,
-        shopId: env.TIKTOK_STORE2_SHOP_ID,
-        shopCipher: env.TIKTOK_STORE2_SHOP_CIPHER,
-        accessToken: env.TIKTOK_STORE2_ACCESS_TOKEN,
-        refreshToken: env.TIKTOK_STORE2_REFRESH_TOKEN,
-        appKey: env.TIKTOK_APP_KEY,
-        appSecret: env.TIKTOK_APP_SECRET
-      })
-    : undefined;
-  const stores = [primaryStore, ...(storeTwo ? [storeTwo] : [])];
+  const storeTwo = buildNumberedStoreConfig(env, 2, "store2");
+  const storeThree = buildNumberedStoreConfig(env, 3, "store3");
+  const stores = [
+    primaryStore,
+    ...(storeTwo ? [storeTwo] : []),
+    ...(storeThree ? [storeThree] : [])
+  ];
 
   return {
     port: Number(env.PORT ?? 3001),
@@ -94,12 +87,38 @@ function buildLabelPrintRules(env: NodeJS.ProcessEnv): LabelPrintRule[] {
     {
       shopId: env.LABEL_PRINT_SHOP_ID_2 || "7495180900215261343",
       warehouseId: env.LABEL_PRINT_WAREHOUSE_ID_2 || "7263214411597498155"
+    },
+    {
+      shopId: env.LABEL_PRINT_SHOP_ID_3,
+      warehouseId: env.LABEL_PRINT_WAREHOUSE_ID_3
     }
   ];
 
   return candidates.filter((rule): rule is LabelPrintRule =>
     Boolean(rule.shopId && rule.warehouseId)
   );
+}
+
+function buildNumberedStoreConfig(
+  env: NodeJS.ProcessEnv,
+  storeNumber: number,
+  id: string
+): TikTokStoreConfig | undefined {
+  const prefix = `TIKTOK_STORE${storeNumber}`;
+  const overlayToken = env[`${prefix}_OVERLAY_TOKEN`] ?? env[`OVERLAY_ALLOWED_TOKEN_STORE${storeNumber}`];
+
+  return overlayToken
+    ? buildStoreConfig({
+        id,
+        overlayToken,
+        shopId: env[`${prefix}_SHOP_ID`],
+        shopCipher: env[`${prefix}_SHOP_CIPHER`],
+        accessToken: env[`${prefix}_ACCESS_TOKEN`],
+        refreshToken: env[`${prefix}_REFRESH_TOKEN`],
+        appKey: env.TIKTOK_APP_KEY,
+        appSecret: env.TIKTOK_APP_SECRET
+      })
+    : undefined;
 }
 
 function buildStoreConfig({

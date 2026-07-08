@@ -117,8 +117,10 @@ LABEL_PRINT_SHOP_ID=7495210574874380572
 LABEL_PRINT_WAREHOUSE_ID=7581531451641317175
 LABEL_PRINT_SHOP_ID_2=7495180900215261343
 LABEL_PRINT_WAREHOUSE_ID_2=7263214411597498155
+LABEL_PRINT_SHOP_ID_3=7495210574874380572
+LABEL_PRINT_WAREHOUSE_ID_3=7581531451641317175
 PRINT_AGENT_SERVER_URL=https://tiktok-shop-live-alert-server.onrender.com
-PRINT_AGENT_TOKEN=otaku-overlay-token
+PRINT_AGENT_TOKEN=crossingtcg-overlay-token
 PRINT_AGENT_DRY_RUN=true
 ```
 
@@ -139,9 +141,10 @@ For the configured shop/warehouse pairs, every new `AWAITING_SHIPMENT` order emi
 ```text
 7495210574874380572 / 7581531451641317175
 7495180900215261343 / 7263214411597498155
+7495210574874380572 / 7581531451641317175
 ```
 
-The label contains only SKU name, product name, buyer nickname, and the last five digits of the order id.
+The label contains the full order id, buyer nickname, product name, and a large `#sku_name` line.
 
 ## Free Deployment Shape
 
