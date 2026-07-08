@@ -753,7 +753,10 @@ async function processTikTokWebhookEvent({
   labelPrintRules: LabelPrintRule[];
 }): Promise<void> {
   try {
-    if (!shouldCreateAlertForTikTokStatus(orderStatus)) {
+    const shouldCreateAlert = shouldCreateAlertForTikTokStatus(orderStatus);
+    const shouldPrintUnpaidCrossingTcgOrder = shouldPrintUnpaidOrderForStore(storeConfig, orderStatus);
+
+    if (!shouldCreateAlert && !shouldPrintUnpaidCrossingTcgOrder) {
       if (orderId && store.removePendingOrder(orderId)) {
         io.to(roomForStore(storeConfig.id)).emit("order:queue", store.getPendingOrders());
       }
@@ -778,6 +781,37 @@ async function processTikTokWebhookEvent({
     });
 
     const details = orderId ? await tiktokOrderClient.getOrderDetails(orderId) : undefined;
+
+    if (shouldPrintUnpaidCrossingTcgOrder && !shouldCreateAlert) {
+      const printOnlyAlert = orderAlertSchema.parse({
+        id: crypto.randomUUID(),
+        source: "tiktok",
+        orderId,
+        buyerDisplayName: details?.buyerDisplayName ?? "Someone",
+        productTitle: details?.productTitle ?? "TikTok Shop Order",
+        quantity: details?.quantity ?? 1,
+        createdAt: new Date().toISOString(),
+        tier: "normal"
+      } satisfies OrderAlert);
+
+      emitLabelPrintJobIfNeeded({
+        labelPrintRules,
+        storeConfig,
+        store,
+        alert: printOnlyAlert,
+        printFields: printFieldsFromOrderDetails(details),
+        io
+      });
+      logger.info("tiktok unpaid order processed for label print", {
+        eventId,
+        storeId: storeConfig.id,
+        orderId,
+        shopId,
+        orderStatus
+      });
+      return;
+    }
+
     const alert =
       details
         ? normalizeTikTokOrderDetailsAlert(details)
@@ -851,4 +885,11 @@ async function processTikTokWebhookEvent({
       errorName: error instanceof Error ? error.name : "UnknownError"
     });
   }
+}
+
+function shouldPrintUnpaidOrderForStore(
+  storeConfig: TikTokStoreConfig,
+  orderStatus: string | undefined
+): boolean {
+  return storeConfig.id === "store3" && orderStatus?.toUpperCase() === "UNPAID";
 }
