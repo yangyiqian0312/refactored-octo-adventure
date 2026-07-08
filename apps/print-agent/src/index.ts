@@ -10,9 +10,12 @@ import { renderRolloLabelHtml, shortOrderId } from "./label.js";
 const serverUrl = process.env.PRINT_AGENT_SERVER_URL ?? "https://tiktok-shop-live-alert-server.onrender.com";
 const token = process.env.PRINT_AGENT_TOKEN ?? process.env.OVERLAY_ALLOWED_TOKEN ?? "otaku-overlay-token";
 const dryRun = process.env.PRINT_AGENT_DRY_RUN === "true";
+const writePreview = dryRun || process.env.PRINT_AGENT_WRITE_PREVIEW === "true";
 const outputDir = process.env.PRINT_AGENT_OUTPUT_DIR ?? path.join(tmpdir(), "live-alert-labels");
+const printScriptPath = path.join(outputDir, "print-rollo-label.ps1");
 
 await mkdir(outputDir, { recursive: true });
+await writePrintScriptIfNeeded();
 
 const socket = io(serverUrl, {
   auth: { token },
@@ -20,7 +23,7 @@ const socket = io(serverUrl, {
 });
 
 socket.on("connect", () => {
-  log("connected", { serverUrl, dryRun });
+  log("connected", { serverUrl, dryRun, writePreview });
 });
 
 socket.on("connect_error", (error) => {
@@ -49,11 +52,15 @@ socket.on("label:print", (payload: unknown) => {
 async function printLabel(job: LabelPrintJob): Promise<void> {
   const filePrefix = `rollo-${safeFilePart(shortOrderId(job.orderId))}`;
   const filePath = path.join(outputDir, `${filePrefix}.html`);
+  const receivedAt = Date.now();
 
-  await writeFile(filePath, renderRolloLabelHtml(job), "utf8");
+  if (writePreview) {
+    await writeFile(filePath, renderRolloLabelHtml(job), "utf8");
+  }
+
   log("label generated", {
     orderId: job.orderId,
-    filePath
+    ...(writePreview ? { filePath } : {})
   });
 
   if (dryRun) {
@@ -61,12 +68,47 @@ async function printLabel(job: LabelPrintJob): Promise<void> {
   }
 
   await printLabelOnWindows(job);
-  log("label sent to default printer", { orderId: job.orderId });
+  log("label sent to default printer", {
+    orderId: job.orderId,
+    localPrintMs: Date.now() - receivedAt
+  });
 }
 
 async function printLabelOnWindows(job: LabelPrintJob): Promise<void> {
   if (process.platform !== "win32") {
     throw new Error("Automatic printing is currently implemented for Windows only.");
+  }
+
+  await new Promise<void>((resolve, reject) => {
+    execFile(
+      "powershell.exe",
+      [
+        "-NoProfile",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-File",
+        printScriptPath,
+        job.skuName,
+        job.productName,
+        job.buyerNickname,
+        job.orderId,
+      ],
+      { windowsHide: true },
+      (error) => {
+        if (error) {
+          reject(error);
+          return;
+        }
+
+        resolve();
+      }
+    );
+  });
+}
+
+async function writePrintScriptIfNeeded(): Promise<void> {
+  if (process.platform !== "win32") {
+    return;
   }
 
   const script = [
@@ -98,35 +140,8 @@ async function printLabelOnWindows(job: LabelPrintJob): Promise<void> {
     "});",
     "$doc.Print();"
   ].join("\n");
-  const scriptPath = path.join(outputDir, "print-rollo-label.ps1");
 
-  await writeFile(scriptPath, script, "utf8");
-
-  await new Promise<void>((resolve, reject) => {
-    execFile(
-      "powershell.exe",
-      [
-        "-NoProfile",
-        "-ExecutionPolicy",
-        "Bypass",
-        "-File",
-        scriptPath,
-        job.skuName,
-        job.productName,
-        job.buyerNickname,
-        job.orderId,
-      ],
-      { windowsHide: true },
-      (error) => {
-        if (error) {
-          reject(error);
-          return;
-        }
-
-        resolve();
-      }
-    );
-  });
+  await writeFile(printScriptPath, script, "utf8");
 }
 
 function safeFilePart(value: string): string {
