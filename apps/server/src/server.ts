@@ -754,9 +754,9 @@ async function processTikTokWebhookEvent({
 }): Promise<void> {
   try {
     const shouldCreateAlert = shouldCreateAlertForTikTokStatus(orderStatus);
-    const shouldPrintUnpaidCrossingTcgOrder = shouldPrintUnpaidOrderForStore(storeConfig, orderStatus);
+    const shouldPrintUnpaidLabelOrder = shouldPrintUnpaidOrderForStore(storeConfig, orderStatus);
 
-    if (!shouldCreateAlert && !shouldPrintUnpaidCrossingTcgOrder) {
+    if (!shouldCreateAlert && !shouldPrintUnpaidLabelOrder) {
       if (orderId && store.removePendingOrder(orderId)) {
         io.to(roomForStore(storeConfig.id)).emit("order:queue", store.getPendingOrders());
       }
@@ -782,7 +782,7 @@ async function processTikTokWebhookEvent({
 
     const details = orderId ? await tiktokOrderClient.getOrderDetails(orderId) : undefined;
 
-    if (shouldPrintUnpaidCrossingTcgOrder && !shouldCreateAlert) {
+    if (shouldPrintUnpaidLabelOrder && !shouldCreateAlert) {
       const printOnlyAlert = orderAlertSchema.parse({
         id: crypto.randomUUID(),
         source: "tiktok",
@@ -891,5 +891,12 @@ function shouldPrintUnpaidOrderForStore(
   storeConfig: TikTokStoreConfig,
   orderStatus: string | undefined
 ): boolean {
-  return storeConfig.id === "store3" && orderStatus?.toUpperCase() === "UNPAID";
+  if (orderStatus?.toUpperCase() !== "UNPAID") {
+    return false;
+  }
+
+  return (
+    (storeConfig.id === "store2" && storeConfig.tiktokShopId === "7495169240868424019") ||
+    (storeConfig.id === "store3" && storeConfig.tiktokShopId === "7495210574874380572")
+  );
 }
