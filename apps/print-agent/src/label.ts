@@ -53,7 +53,15 @@ export function renderRolloLabelHtml(job: LabelPrintJob, qrImagePath?: string): 
     }
 
     .order-id {
+      flex: 1 1 auto;
+      min-width: 0;
       font-size: 5.5pt;
+    }
+
+    .price {
+      flex: 0 0 auto;
+      overflow: visible;
+      text-overflow: clip;
     }
 
     .buyer {
@@ -87,7 +95,7 @@ export function renderRolloLabelHtml(job: LabelPrintJob, qrImagePath?: string): 
   <main class="label">
     <header class="meta">
       <span class="order-id">ORDER ${escapeHtml(formatShortOrderId(job.orderId))}</span>
-      ${job.productPaidAmount === undefined ? "" : `<span>${escapeHtml(formatProductPaidAmount(job.productPaidAmount, job.productPaidCurrency))}</span>`}
+      ${job.productPaidAmount === undefined ? "" : `<span class="price">${escapeHtml(formatProductPaidAmount(job.productPaidAmount, job.productPaidCurrency))}</span>`}
     </header>
     <div class="buyer">${escapeHtml(formatBuyerId(job.buyerNickname))}</div>
     <div class="pick-code">${escapeHtml(formatPickCode(job.productName, job.skuName))}</div>

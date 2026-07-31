@@ -31,7 +31,8 @@ describe("renderRolloLabelHtml", () => {
     expect(html).not.toContain("577387538643456175");
     expect(html).not.toContain("A $1 START POKEMON/OP/TCG");
     expect(html).toContain("@buyer123");
-    expect(html).toContain(">30</span>");
+    expect(html).toContain('<span class="price">30</span>');
+    expect(html).toContain("flex: 0 0 auto");
     expect(html).not.toContain("$30");
     expect(html).toContain("A 487");
   });

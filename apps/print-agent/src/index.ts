@@ -5,7 +5,15 @@ import { mkdir, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { io } from "socket.io-client";
-import { renderRolloLabelHtml, shortOrderId } from "./label.js";
+import {
+  formatBuyerId,
+  formatPickCode,
+  formatProductPaidAmount,
+  formatShortOrderId,
+  renderRolloLabelHtml,
+  shortOrderId
+} from "./label.js";
+import { renderWindowsPrintScript } from "./windowsPrintScript.js";
 
 const serverUrl = process.env.PRINT_AGENT_SERVER_URL ?? "https://tiktok-shop-live-alert-server.onrender.com";
 const token = process.env.PRINT_AGENT_TOKEN ?? process.env.OVERLAY_ALLOWED_TOKEN ?? "otaku-overlay-token";
@@ -88,10 +96,12 @@ async function printLabelOnWindows(job: LabelPrintJob): Promise<void> {
         "Bypass",
         "-File",
         printScriptPath,
-        job.skuName,
-        job.productName,
-        job.buyerNickname,
-        job.orderId,
+        formatPickCode(job.productName, job.skuName),
+        formatBuyerId(job.buyerNickname),
+        formatShortOrderId(job.orderId),
+        job.productPaidAmount === undefined
+          ? ""
+          : formatProductPaidAmount(job.productPaidAmount, job.productPaidCurrency)
       ],
       { windowsHide: true },
       (error) => {
@@ -111,37 +121,7 @@ async function writePrintScriptIfNeeded(): Promise<void> {
     return;
   }
 
-  const script = [
-    "param([string]$skuName, [string]$productName, [string]$buyerNickname, [string]$orderId)",
-    "Add-Type -AssemblyName System.Drawing;",
-    "$doc = New-Object System.Drawing.Printing.PrintDocument;",
-    "$doc.DocumentName = 'Live Order Label';",
-    "$doc.DefaultPageSettings.PaperSize = New-Object System.Drawing.Printing.PaperSize('2x1', 100, 200);",
-    "$doc.DefaultPageSettings.Landscape = $true;",
-    "$doc.DefaultPageSettings.Margins = New-Object System.Drawing.Printing.Margins(0, 0, 0, 0);",
-    "$doc.add_PrintPage({",
-    "param($sender, $event);",
-    "$graphics = $event.Graphics;",
-    "$graphics.PageUnit = [System.Drawing.GraphicsUnit]::Display;",
-    "$graphics.SmoothingMode = [System.Drawing.Drawing2D.SmoothingMode]::None;",
-    "$graphics.TextRenderingHint = [System.Drawing.Text.TextRenderingHint]::SingleBitPerPixelGridFit;",
-    "$black = [System.Drawing.Brushes]::Black;",
-    "$smallFont = New-Object System.Drawing.Font('Arial', 7, [System.Drawing.FontStyle]::Bold);",
-    "$productFont = New-Object System.Drawing.Font('Arial', 8, [System.Drawing.FontStyle]::Bold);",
-    "$orderFont = New-Object System.Drawing.Font('Arial', 14, [System.Drawing.FontStyle]::Bold);",
-    "$format = New-Object System.Drawing.StringFormat;",
-    "$format.Trimming = [System.Drawing.StringTrimming]::EllipsisCharacter;",
-    "$format.FormatFlags = [System.Drawing.StringFormatFlags]::NoWrap;",
-    "$graphics.DrawString($orderId, $smallFont, $black, (New-Object System.Drawing.RectangleF(8, 8, 184, 13)), $format);",
-    "$graphics.DrawString(('BUYER ' + $buyerNickname), $smallFont, $black, (New-Object System.Drawing.RectangleF(8, 24, 184, 13)), $format);",
-    "$graphics.DrawString($productName, $productFont, $black, (New-Object System.Drawing.RectangleF(8, 40, 184, 16)), $format);",
-    "$graphics.DrawString(('#' + $skuName), $orderFont, $black, (New-Object System.Drawing.RectangleF(8, 62, 184, 24)), $format);",
-    "$event.HasMorePages = $false;",
-    "});",
-    "$doc.Print();"
-  ].join("\n");
-
-  await writeFile(printScriptPath, script, "utf8");
+  await writeFile(printScriptPath, renderWindowsPrintScript(), "utf8");
 }
 
 function safeFilePart(value: string): string {

@@ -624,8 +624,8 @@ function printFieldsFromOrderDetails(details: TikTokOrderDetails | undefined): {
     skuName: details?.skuName ?? details?.productTitle,
     productName: details?.productTitle,
     buyerNickname: details?.buyerNickname ?? details?.buyerDisplayName,
-    productPaidAmount: details?.productPaidAmount,
-    productPaidCurrency: details?.productPaidCurrency
+    productPaidAmount: details?.productPaidAmount ?? details?.orderTotalAmount,
+    productPaidCurrency: details?.productPaidCurrency ?? details?.orderTotalCurrency
   };
 }
 
