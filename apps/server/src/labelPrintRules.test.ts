@@ -25,7 +25,11 @@ describe("findMatchingLabelPrintRule", () => {
     expect(findMatchingLabelPrintRule(rules, "shop-b", undefined)).toBeUndefined();
   });
 
-  it("does not fall back when TikTok returns a different warehouse", () => {
-    expect(findMatchingLabelPrintRule(rules, "shop-a", "warehouse-other")).toBeUndefined();
+  it("uses the only configured warehouse when TikTok returns a different internal id", () => {
+    expect(findMatchingLabelPrintRule(rules, "shop-a", "warehouse-other")).toEqual(rules[0]);
+  });
+
+  it("fails closed on a different warehouse when the shop has multiple warehouses", () => {
+    expect(findMatchingLabelPrintRule(rules, "shop-b", "warehouse-other")).toBeUndefined();
   });
 });

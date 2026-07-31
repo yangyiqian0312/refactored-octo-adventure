@@ -10,9 +10,12 @@ export function findMatchingLabelPrintRule(
   }
 
   if (warehouseId) {
-    return rules.find(
+    const exactRule = rules.find(
       (rule) => rule.shopId === shopId && rule.warehouseId === warehouseId
     );
+    if (exactRule) {
+      return exactRule;
+    }
   }
 
   const rulesForShop = rules.filter((rule) => rule.shopId === shopId);
