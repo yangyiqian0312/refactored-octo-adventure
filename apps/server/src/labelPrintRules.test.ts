@@ -1,0 +1,26 @@
+import { describe, expect, it } from "vitest";
+import { findMatchingLabelPrintRule } from "./labelPrintRules.js";
+
+const rules = [
+  { shopId: "shop-a", warehouseId: "warehouse-a" },
+  { shopId: "shop-b", warehouseId: "warehouse-b1" },
+  { shopId: "shop-b", warehouseId: "warehouse-b2" }
+];
+
+describe("findMatchingLabelPrintRule", () => {
+  it("matches an exact shop and warehouse pair", () => {
+    expect(findMatchingLabelPrintRule(rules, "shop-b", "warehouse-b2")).toEqual(rules[2]);
+  });
+
+  it("uses the only configured warehouse when TikTok omits warehouse id", () => {
+    expect(findMatchingLabelPrintRule(rules, "shop-a", undefined)).toEqual(rules[0]);
+  });
+
+  it("fails closed when an omitted warehouse is ambiguous", () => {
+    expect(findMatchingLabelPrintRule(rules, "shop-b", undefined)).toBeUndefined();
+  });
+
+  it("does not fall back when TikTok returns a different warehouse", () => {
+    expect(findMatchingLabelPrintRule(rules, "shop-a", "warehouse-other")).toBeUndefined();
+  });
+});

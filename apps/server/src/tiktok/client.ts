@@ -308,11 +308,27 @@ function normalizeOrderDetail(orderId: string, order: Record<string, unknown>): 
     stringValue(order.userId) ??
     stringValue(buyerInfo?.user_id) ??
     stringValue(buyerInfo?.userId);
+  const fulfillment =
+    recordValue(order.fulfillment) ??
+    recordValue(order.fulfillment_info) ??
+    recordValue(order.fulfillmentInfo) ??
+    recordValue(order.shipping_info) ??
+    recordValue(order.shippingInfo);
+  const firstPackage =
+    arrayValue(order.packages)?.find(isRecord) ??
+    arrayValue(order.package_list)?.find(isRecord) ??
+    arrayValue(order.packageList)?.find(isRecord);
   const warehouseId =
     stringValue(order.warehouse_id) ??
     stringValue(order.warehouseId) ??
     stringValue(firstLineItem.warehouse_id) ??
-    stringValue(firstLineItem.warehouseId);
+    stringValue(firstLineItem.warehouseId) ??
+    (fulfillment
+      ? stringValue(fulfillment.warehouse_id) ?? stringValue(fulfillment.warehouseId)
+      : undefined) ??
+    (firstPackage
+      ? stringValue(firstPackage.warehouse_id) ?? stringValue(firstPackage.warehouseId)
+      : undefined);
 
   if (skuId) {
     details.skuId = skuId;

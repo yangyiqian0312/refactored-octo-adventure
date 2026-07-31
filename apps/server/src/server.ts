@@ -13,6 +13,7 @@ import Fastify, { type FastifyInstance } from "fastify";
 import { Server as SocketIOServer } from "socket.io";
 import { z, ZodError } from "zod";
 import type { AppConfig, LabelPrintRule, TikTokStoreConfig } from "./config.js";
+import { findMatchingLabelPrintRule } from "./labelPrintRules.js";
 import { logger } from "./logger.js";
 import { InMemoryOrderStore } from "./store.js";
 import {
@@ -554,8 +555,10 @@ function emitLabelPrintJobIfNeeded({
   io: SocketIOServer;
 }): void {
   const shopId = shopIdOverride ?? storeConfig.tiktokShopId;
-  const matchingRule = labelPrintRules.find((rule) =>
-    rule.shopId === shopId && rule.warehouseId === printFields.warehouseId
+  const matchingRule = findMatchingLabelPrintRule(
+    labelPrintRules,
+    shopId,
+    printFields.warehouseId
   );
 
   if (

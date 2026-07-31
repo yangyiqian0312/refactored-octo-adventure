@@ -138,6 +138,9 @@ PRINT_AGENT_DRY_RUN=false
 
 For the configured shop/warehouse pairs, every new `AWAITING_SHIPMENT` order emits one `label:print` event per order. The default pairs are:
 
+If TikTok omits `warehouse_id`, printing falls back only when that shop has exactly one
+configured label warehouse. Shops with multiple configured warehouses still fail closed.
+
 ```text
 7495210574874380572 / 7581531451641317175
 7495180900215261343 / 7263214411597498155
