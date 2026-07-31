@@ -16,6 +16,11 @@ describe("findMatchingLabelPrintRule", () => {
     expect(findMatchingLabelPrintRule(rules, "shop-a", undefined)).toEqual(rules[0]);
   });
 
+  it("treats duplicate rules for the same warehouse as one configured warehouse", () => {
+    const duplicateRules = [rules[0], { ...rules[0] }];
+    expect(findMatchingLabelPrintRule(duplicateRules, "shop-a", undefined)).toEqual(rules[0]);
+  });
+
   it("fails closed when an omitted warehouse is ambiguous", () => {
     expect(findMatchingLabelPrintRule(rules, "shop-b", undefined)).toBeUndefined();
   });

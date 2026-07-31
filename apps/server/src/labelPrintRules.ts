@@ -16,5 +16,6 @@ export function findMatchingLabelPrintRule(
   }
 
   const rulesForShop = rules.filter((rule) => rule.shopId === shopId);
-  return rulesForShop.length === 1 ? rulesForShop[0] : undefined;
+  const warehouseIds = new Set(rulesForShop.map((rule) => rule.warehouseId));
+  return warehouseIds.size === 1 ? rulesForShop[0] : undefined;
 }
