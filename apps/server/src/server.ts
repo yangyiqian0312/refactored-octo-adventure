@@ -131,7 +131,9 @@ export async function createApp(config: AppConfig): Promise<AppContext> {
           warehouseId: input.warehouseId,
           skuName: input.skuName ?? input.skuId,
           productName: input.productTitle,
-          buyerNickname: input.buyerNickname ?? input.buyerName ?? input.userId
+          buyerNickname: input.buyerNickname ?? input.buyerName ?? input.userId,
+          productPaidAmount: input.productPaidAmount,
+          productPaidCurrency: input.productPaidCurrency
         },
         io
       });
@@ -546,6 +548,8 @@ function emitLabelPrintJobIfNeeded({
     skuName: string | undefined;
     productName: string | undefined;
     buyerNickname: string | undefined;
+    productPaidAmount: number | undefined;
+    productPaidCurrency: string | undefined;
   };
   io: SocketIOServer;
 }): void {
@@ -590,6 +594,8 @@ function emitLabelPrintJobIfNeeded({
     skuName: printFields.skuName,
     productName: printFields.productName,
     buyerNickname: printFields.buyerNickname,
+    productPaidAmount: printFields.productPaidAmount,
+    productPaidCurrency: printFields.productPaidCurrency,
     createdAt: new Date().toISOString()
   } satisfies LabelPrintJob);
 
@@ -607,12 +613,16 @@ function printFieldsFromOrderDetails(details: TikTokOrderDetails | undefined): {
   skuName: string | undefined;
   productName: string | undefined;
   buyerNickname: string | undefined;
+  productPaidAmount: number | undefined;
+  productPaidCurrency: string | undefined;
 } {
   return {
     warehouseId: details?.warehouseId,
     skuName: details?.skuName ?? details?.productTitle,
     productName: details?.productTitle,
-    buyerNickname: details?.buyerNickname ?? details?.buyerDisplayName
+    buyerNickname: details?.buyerNickname ?? details?.buyerDisplayName,
+    productPaidAmount: details?.productPaidAmount,
+    productPaidCurrency: details?.productPaidCurrency
   };
 }
 

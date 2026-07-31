@@ -58,9 +58,12 @@ describe("LabelPrintJob schema", () => {
       skuName: "ME03 Perfect Order",
       productName: "Pokemon Booster Pack",
       buyerNickname: "buyer123",
+      productPaidAmount: 30,
+      productPaidCurrency: "USD",
       createdAt: new Date().toISOString()
     });
 
     expect(job.shopId).toBe("7495210574874380572");
+    expect(job.productPaidAmount).toBe(30);
   });
 });

@@ -33,6 +33,8 @@ export const labelPrintJobSchema = z.object({
   skuName: z.string().min(1),
   productName: z.string().min(1),
   buyerNickname: z.string().min(1),
+  productPaidAmount: z.number().nonnegative().optional(),
+  productPaidCurrency: z.string().trim().min(1).max(12).optional(),
   createdAt: z.string().datetime()
 });
 
@@ -49,7 +51,9 @@ export const testOrderRequestSchema = z.object({
   quantity: z.number().int().positive().max(999),
   imageUrl: z.string().url().optional(),
   orderTotalAmount: z.number().nonnegative().optional(),
-  orderTotalCurrency: z.string().trim().min(1).max(12).optional()
+  orderTotalCurrency: z.string().trim().min(1).max(12).optional(),
+  productPaidAmount: z.number().nonnegative().optional(),
+  productPaidCurrency: z.string().trim().min(1).max(12).optional()
 });
 
 export type OrderAlertTier = z.infer<typeof orderAlertTierSchema>;

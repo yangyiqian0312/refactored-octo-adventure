@@ -109,7 +109,7 @@ More notes: [docs/TIKTOK_INTEGRATION.md](docs/TIKTOK_INTEGRATION.md).
 Render cannot directly access a local Rollo printer. Run the local print agent on the Windows computer that has the Rollo driver installed.
 
 1. Set the Rollo printer as the Windows default printer.
-2. In the Rollo printer preferences, set the label size to `2 x 1 in`.
+2. In the Rollo printer preferences, set the label size to `1.5 x 1 in` (landscape).
 3. Configure `.env`:
 
 ```bash

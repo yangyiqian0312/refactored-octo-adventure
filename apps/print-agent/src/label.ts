@@ -8,13 +8,13 @@ export function renderRolloLabelHtml(job: LabelPrintJob, qrImagePath?: string): 
   <title>Order ${escapeHtml(shortOrderId(job.orderId))}</title>
   <style>
     @page {
-      size: 2in 1in;
+      size: 1.5in 1in;
       margin: 0;
     }
 
     html,
     body {
-      width: 2in;
+      width: 1.5in;
       height: 1in;
       margin: 0;
       overflow: hidden;
@@ -25,35 +25,73 @@ export function renderRolloLabelHtml(job: LabelPrintJob, qrImagePath?: string): 
 
     .label {
       box-sizing: border-box;
-      width: 2in;
+      width: 1.5in;
       height: 1in;
-      padding: 0.09in 0.1in;
+      padding: 0.07in 0.07in 0.07in 0.2in;
       display: grid;
-      align-content: center;
+      grid-template-rows: 0.16in 0.25in 0.28in 0.11in;
       gap: 0.025in;
       border: 0.015in solid #000;
     }
 
-    .line {
-      font-size: 9pt;
+    .meta {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.08in;
+      padding-bottom: 0.025in;
+      border-bottom: 0.01in solid #000;
+      font-size: 7pt;
       line-height: 1;
       font-weight: 800;
+    }
+
+    .meta span {
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
     }
 
-    .order {
-      font-size: 13pt;
+    .order-id {
+      font-size: 5.5pt;
+    }
+
+    .buyer {
+      overflow: hidden;
+      font-size: 14pt;
+      line-height: 1;
+      font-weight: 900;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+    }
+
+    .pick-code {
+      overflow: hidden;
+      font-size: 21pt;
+      line-height: 1;
+      font-weight: 900;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+    }
+
+    .peel-note {
+      overflow: hidden;
+      font-size: 5.5pt;
+      line-height: 1;
+      font-weight: 700;
+      white-space: nowrap;
     }
   </style>
 </head>
 <body>
   <main class="label">
-    <div class="line">${escapeHtml(job.orderId)}</div>
-    <div class="line">BUYER ${escapeHtml(job.buyerNickname)}</div>
-    <div class="line">${escapeHtml(job.productName)}</div>
-    <div class="line order">#${escapeHtml(job.skuName)}</div>
+    <header class="meta">
+      <span class="order-id">ORDER ${escapeHtml(formatShortOrderId(job.orderId))}</span>
+      ${job.productPaidAmount === undefined ? "" : `<span>${escapeHtml(formatProductPaidAmount(job.productPaidAmount, job.productPaidCurrency))}</span>`}
+    </header>
+    <div class="buyer">${escapeHtml(formatBuyerId(job.buyerNickname))}</div>
+    <div class="pick-code">${escapeHtml(formatPickCode(job.productName, job.skuName))}</div>
+    <div class="peel-note">*This label peels off easily.</div>
   </main>
 </body>
 </html>`;
@@ -66,6 +104,17 @@ export function formatBuyerId(buyerDisplayName: string): string {
 
 export function formatShortOrderId(orderId: string): string {
   return `#${shortOrderId(orderId)}`;
+}
+
+export function formatPickCode(productName: string, skuName: string): string {
+  const titleCode = productName.trim().match(/^([A-Z])(?:\s|$)/)?.[1];
+  const number = skuName.trim().replace(/^#+\s*/, "");
+  return titleCode ? `${titleCode} ${number}` : number;
+}
+
+export function formatProductPaidAmount(amount: number, currency = "USD"): string {
+  const value = Number.isInteger(amount) ? String(amount) : amount.toFixed(2).replace(/0+$/, "").replace(/\.$/, "");
+  return currency.toUpperCase() === "USD" ? value : `${value} ${currency.toUpperCase()}`;
 }
 
 export function shortOrderId(orderId: string): string {

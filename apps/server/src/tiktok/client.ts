@@ -9,6 +9,8 @@ export type TikTokOrderDetails = {
   imageUrl?: string;
   orderTotalAmount?: number;
   orderTotalCurrency?: string;
+  productPaidAmount?: number;
+  productPaidCurrency?: string;
   skuId?: string;
   skuName?: string;
   userId?: string;
@@ -362,6 +364,14 @@ function normalizeOrderDetail(orderId: string, order: Record<string, unknown>): 
         stringValue(paymentInfo.currency_code) ??
         stringValue(paymentInfo.currencyCode)
       : undefined);
+  const productPaidAmount = paymentInfo
+    ? moneyValue(paymentInfo.sub_total) ?? moneyValue(paymentInfo.subTotal)
+    : undefined;
+  const productPaidCurrency = paymentInfo
+    ? stringValue(paymentInfo.currency) ??
+      stringValue(paymentInfo.currency_code) ??
+      stringValue(paymentInfo.currencyCode)
+    : undefined;
 
   if (orderTotalAmount !== undefined) {
     details.orderTotalAmount = orderTotalAmount;
@@ -369,6 +379,14 @@ function normalizeOrderDetail(orderId: string, order: Record<string, unknown>): 
 
   if (orderTotalCurrency) {
     details.orderTotalCurrency = orderTotalCurrency;
+  }
+
+  if (productPaidAmount !== undefined) {
+    details.productPaidAmount = productPaidAmount;
+  }
+
+  if (productPaidCurrency) {
+    details.productPaidCurrency = productPaidCurrency;
   }
 
   return details;
