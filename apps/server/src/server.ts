@@ -41,23 +41,6 @@ const queueRemoveRequestSchema = z.object({
   orderId: z.string().min(1)
 });
 
-type UnpaidDiagnosticSnapshot = {
-  capturedAt: string;
-  orderIdSuffix: string | undefined;
-  status: "UNPAID";
-  responseShape: ReturnType<TikTokOrderClient["getLastOrderDetailShape"]>;
-  available: {
-    userId: boolean;
-    buyerDisplayName: boolean;
-    buyerNickname: boolean;
-    skuName: boolean;
-    productName: boolean;
-    warehouseId: boolean;
-    productPaidAmount: boolean;
-    orderTotalAmount: boolean;
-  };
-};
-
 export type AppContext = {
   app: FastifyInstance;
   io: SocketIOServer;
@@ -74,7 +57,6 @@ export async function createApp(config: AppConfig): Promise<AppContext> {
   const tiktokOrderClients = new Map(
     config.stores.map((storeConfig) => [storeConfig.id, createTikTokOrderClient(config, storeConfig)])
   );
-  const unpaidDiagnosticSnapshots = new Map<string, UnpaidDiagnosticSnapshot>();
 
   await app.register(cors, {
     origin: true,
@@ -266,20 +248,6 @@ export async function createApp(config: AppConfig): Promise<AppContext> {
     };
   });
 
-  app.get("/api/debug/unpaid-snapshot", async (request, reply) => {
-    const storeConfig = findStoreForDebugRequest(request.headers.authorization, config);
-
-    if (!storeConfig) {
-      return reply.status(401).send({ ok: false });
-    }
-
-    return {
-      ok: true,
-      storeId: storeConfig.id,
-      snapshot: unpaidDiagnosticSnapshots.get(storeConfig.id) ?? null
-    };
-  });
-
   app.get("/api/queue", async (request, reply) => {
     const storeConfig = findStoreForDebugRequest(request.headers.authorization, config);
 
@@ -437,8 +405,7 @@ export async function createApp(config: AppConfig): Promise<AppContext> {
         tiktokOrderClient: getTikTokClient(tiktokOrderClients, storeConfig.id),
         store: targetStore,
         io,
-        labelPrintRules: config.labelPrintRules,
-        unpaidDiagnosticSnapshots
+        labelPrintRules: config.labelPrintRules
       });
     });
 
@@ -785,8 +752,7 @@ async function processTikTokWebhookEvent({
   tiktokOrderClient,
   store,
   io,
-  labelPrintRules,
-  unpaidDiagnosticSnapshots
+  labelPrintRules
 }: {
   payload: Record<string, unknown>;
   eventId: string;
@@ -798,13 +764,11 @@ async function processTikTokWebhookEvent({
   store: InMemoryOrderStore;
   io: SocketIOServer;
   labelPrintRules: LabelPrintRule[];
-  unpaidDiagnosticSnapshots: Map<string, UnpaidDiagnosticSnapshot>;
 }): Promise<void> {
   try {
     const shouldCreateAlert = shouldCreateAlertForTikTokStatus(orderStatus);
-    const shouldPrintUnpaidLabelOrder = shouldPrintUnpaidOrderForStore(storeConfig, orderStatus);
 
-    if (!shouldCreateAlert && !shouldPrintUnpaidLabelOrder) {
+    if (!shouldCreateAlert) {
       if (orderId && store.removePendingOrder(orderId)) {
         io.to(roomForStore(storeConfig.id)).emit("order:queue", store.getPendingOrders());
       }
@@ -829,55 +793,6 @@ async function processTikTokWebhookEvent({
     });
 
     const details = orderId ? await tiktokOrderClient.getOrderDetails(orderId) : undefined;
-
-    if (orderStatus?.toUpperCase() === "UNPAID" && storeConfig.id === "store2") {
-      unpaidDiagnosticSnapshots.set(storeConfig.id, {
-        capturedAt: new Date().toISOString(),
-        orderIdSuffix: orderId?.slice(-5),
-        status: "UNPAID",
-        responseShape: tiktokOrderClient.getLastOrderDetailShape(),
-        available: {
-          userId: Boolean(details?.userId),
-          buyerDisplayName: Boolean(details?.buyerDisplayName),
-          buyerNickname: Boolean(details?.buyerNickname),
-          skuName: Boolean(details?.skuName),
-          productName: Boolean(details?.productTitle),
-          warehouseId: Boolean(details?.warehouseId),
-          productPaidAmount: details?.productPaidAmount !== undefined,
-          orderTotalAmount: details?.orderTotalAmount !== undefined
-        }
-      });
-    }
-
-    if (shouldPrintUnpaidLabelOrder && !shouldCreateAlert) {
-      const printOnlyAlert = orderAlertSchema.parse({
-        id: crypto.randomUUID(),
-        source: "tiktok",
-        orderId,
-        buyerDisplayName: details?.buyerDisplayName ?? "Someone",
-        productTitle: details?.productTitle ?? "TikTok Shop Order",
-        quantity: details?.quantity ?? 1,
-        createdAt: new Date().toISOString(),
-        tier: "normal"
-      } satisfies OrderAlert);
-
-      emitLabelPrintJobIfNeeded({
-        labelPrintRules,
-        storeConfig,
-        store,
-        alert: printOnlyAlert,
-        printFields: printFieldsFromOrderDetails(details),
-        io
-      });
-      logger.info("tiktok unpaid order processed for label print", {
-        eventId,
-        storeId: storeConfig.id,
-        orderId,
-        shopId,
-        orderStatus
-      });
-      return;
-    }
 
     const alert =
       details
@@ -954,16 +869,3 @@ async function processTikTokWebhookEvent({
   }
 }
 
-function shouldPrintUnpaidOrderForStore(
-  storeConfig: TikTokStoreConfig,
-  orderStatus: string | undefined
-): boolean {
-  if (orderStatus?.toUpperCase() !== "UNPAID") {
-    return false;
-  }
-
-  return (
-    (storeConfig.id === "store2" && storeConfig.tiktokShopId === "7495169240868424019") ||
-    (storeConfig.id === "store3" && storeConfig.tiktokShopId === "7495210574874380572")
-  );
-}

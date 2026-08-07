@@ -130,6 +130,9 @@ PRINT_AGENT_DRY_RUN=true
 pnpm print-agent
 ```
 
+The agent starts one persistent hidden PowerShell print worker and reuses it for every label.
+Keep the agent running during the stream; do not start multiple copies.
+
 With `PRINT_AGENT_DRY_RUN=true`, the agent only writes label HTML files to your temp folder. After confirming the label looks right, set:
 
 ```bash

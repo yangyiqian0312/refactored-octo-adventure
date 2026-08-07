@@ -1,6 +1,5 @@
 import { labelPrintJobSchema, type LabelPrintJob } from "@live-alerts/shared";
 import "dotenv/config";
-import { execFile } from "node:child_process";
 import { mkdir, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
@@ -14,6 +13,7 @@ import {
   shortOrderId
 } from "./label.js";
 import { renderWindowsPrintScript } from "./windowsPrintScript.js";
+import { WindowsPrintWorker } from "./windowsPrintWorker.js";
 
 const serverUrl = process.env.PRINT_AGENT_SERVER_URL ?? "https://tiktok-shop-live-alert-server.onrender.com";
 const token = process.env.PRINT_AGENT_TOKEN ?? process.env.OVERLAY_ALLOWED_TOKEN ?? "otaku-overlay-token";
@@ -24,6 +24,13 @@ const printScriptPath = path.join(outputDir, "print-rollo-label.ps1");
 
 await mkdir(outputDir, { recursive: true });
 await writePrintScriptIfNeeded();
+const printWorker = process.platform === "win32" && !dryRun
+  ? new WindowsPrintWorker(printScriptPath, (message) => log("print worker error", { message }))
+  : undefined;
+printWorker?.start();
+
+process.once("SIGINT", () => printWorker?.stop());
+process.once("SIGTERM", () => printWorker?.stop());
 
 const socket = io(serverUrl, {
   auth: { token },
@@ -87,32 +94,18 @@ async function printLabelOnWindows(job: LabelPrintJob): Promise<void> {
     throw new Error("Automatic printing is currently implemented for Windows only.");
   }
 
-  await new Promise<void>((resolve, reject) => {
-    execFile(
-      "powershell.exe",
-      [
-        "-NoProfile",
-        "-ExecutionPolicy",
-        "Bypass",
-        "-File",
-        printScriptPath,
-        formatPickCode(job.productName, job.skuName),
-        formatBuyerId(job.buyerNickname),
-        formatShortOrderId(job.orderId),
-        job.productPaidAmount === undefined
-          ? ""
-          : formatProductPaidAmount(job.productPaidAmount, job.productPaidCurrency)
-      ],
-      { windowsHide: true },
-      (error) => {
-        if (error) {
-          reject(error);
-          return;
-        }
+  if (!printWorker) {
+    throw new Error("Print worker is unavailable.");
+  }
 
-        resolve();
-      }
-    );
+  await printWorker.print({
+    id: job.id,
+    pickCode: formatPickCode(job.productName, job.skuName),
+    buyerName: formatBuyerId(job.buyerNickname),
+    orderId: formatShortOrderId(job.orderId),
+    price: job.productPaidAmount === undefined
+      ? ""
+      : formatProductPaidAmount(job.productPaidAmount, job.productPaidCurrency)
   });
 }
 
