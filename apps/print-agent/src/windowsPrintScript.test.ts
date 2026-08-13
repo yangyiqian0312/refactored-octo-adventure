@@ -12,6 +12,11 @@ describe("renderWindowsPrintScript", () => {
     expect(script).toContain("[Console]::In.ReadLine()");
     expect(script).toContain("ConvertFrom-Json");
     expect(script).toContain("ConvertTo-Json -Compress");
+    expect(script).toContain("$graphics.MeasureString($job.pickCode, $pickFont)");
+    expect(script).toContain("DrawString('(fixed)', $fixedPickFont");
+    expect(script).toContain("PointF($fixedX, 52)");
+    expect(script).toContain("$job.late");
+    expect(script).not.toContain("LATE - CHECK");
     expect(script).not.toContain("('BUYER ' +");
   });
 });

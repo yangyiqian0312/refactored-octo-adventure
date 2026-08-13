@@ -14,6 +14,7 @@ import {
 } from "./label.js";
 import { renderWindowsPrintScript } from "./windowsPrintScript.js";
 import { WindowsPrintWorker } from "./windowsPrintWorker.js";
+import { PickSequenceTracker } from "./pickSequence.js";
 
 const serverUrl = process.env.PRINT_AGENT_SERVER_URL ?? "https://tiktok-shop-live-alert-server.onrender.com";
 const token = process.env.PRINT_AGENT_TOKEN ?? process.env.OVERLAY_ALLOWED_TOKEN ?? "otaku-overlay-token";
@@ -21,6 +22,7 @@ const dryRun = process.env.PRINT_AGENT_DRY_RUN === "true";
 const writePreview = dryRun || process.env.PRINT_AGENT_WRITE_PREVIEW === "true";
 const outputDir = process.env.PRINT_AGENT_OUTPUT_DIR ?? path.join(tmpdir(), "live-alert-labels");
 const printScriptPath = path.join(outputDir, "print-rollo-label.ps1");
+const pickSequence = new PickSequenceTracker();
 
 await mkdir(outputDir, { recursive: true });
 await writePrintScriptIfNeeded();
@@ -36,6 +38,7 @@ const socket = io(serverUrl, {
   auth: { token },
   transports: ["websocket", "polling"]
 });
+let printQueue = Promise.resolve();
 
 socket.on("connect", () => {
   log("connected", { serverUrl, dryRun, writePreview });
@@ -57,11 +60,15 @@ socket.on("label:print", (payload: unknown) => {
     return;
   }
 
-  void printLabel(parsed.data).catch((error: unknown) => {
-    log("print failed", {
-      message: error instanceof Error ? error.message : "Unknown error"
+  const job = parsed.data;
+  printQueue = printQueue
+    .then(() => printLabel(job))
+    .catch((error: unknown) => {
+      log("print failed", {
+        orderId: job.orderId,
+        message: error instanceof Error ? error.message : "Unknown error"
+      });
     });
-  });
 });
 
 async function printLabel(job: LabelPrintJob): Promise<void> {
@@ -73,23 +80,40 @@ async function printLabel(job: LabelPrintJob): Promise<void> {
     await writeFile(filePath, renderRolloLabelHtml(job), "utf8");
   }
 
+  const pickCode = formatPickCode(job.productName, job.skuName);
+  const sequence = pickSequence.observe(pickCode);
+
   log("label generated", {
     orderId: job.orderId,
+    pickCode,
+    lateSequence: sequence.late,
     ...(writePreview ? { filePath } : {})
   });
+
+  if (sequence.late) {
+    log("sequence warning", {
+      orderId: job.orderId,
+      pickCode,
+      previousMax: sequence.previousMax
+    });
+  }
 
   if (dryRun) {
     return;
   }
 
-  await printLabelOnWindows(job);
+  await printLabelOnWindows(job, pickCode, sequence.late);
   log("label sent to default printer", {
     orderId: job.orderId,
     localPrintMs: Date.now() - receivedAt
   });
 }
 
-async function printLabelOnWindows(job: LabelPrintJob): Promise<void> {
+async function printLabelOnWindows(
+  job: LabelPrintJob,
+  pickCode: string,
+  late: boolean
+): Promise<void> {
   if (process.platform !== "win32") {
     throw new Error("Automatic printing is currently implemented for Windows only.");
   }
@@ -98,15 +122,26 @@ async function printLabelOnWindows(job: LabelPrintJob): Promise<void> {
     throw new Error("Print worker is unavailable.");
   }
 
-  await printWorker.print({
+  const payload = {
     id: job.id,
-    pickCode: formatPickCode(job.productName, job.skuName),
+    pickCode,
     buyerName: formatBuyerId(job.buyerNickname),
     orderId: formatShortOrderId(job.orderId),
     price: job.productPaidAmount === undefined
       ? ""
-      : formatProductPaidAmount(job.productPaidAmount, job.productPaidCurrency)
-  });
+      : formatProductPaidAmount(job.productPaidAmount, job.productPaidCurrency),
+    late
+  };
+
+  try {
+    await printWorker.print(payload);
+  } catch (error) {
+    log("print worker retry", {
+      orderId: job.orderId,
+      errorName: error instanceof Error ? error.name : "UnknownError"
+    });
+    await printWorker.print(payload);
+  }
 }
 
 async function writePrintScriptIfNeeded(): Promise<void> {

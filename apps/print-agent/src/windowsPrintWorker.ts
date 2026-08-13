@@ -7,6 +7,7 @@ export type WindowsPrintPayload = {
   buyerName: string;
   orderId: string;
   price: string;
+  late: boolean;
 };
 
 type PendingPrint = {

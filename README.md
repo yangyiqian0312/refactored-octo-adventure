@@ -132,6 +132,12 @@ pnpm print-agent
 
 The agent starts one persistent hidden PowerShell print worker and reuses it for every label.
 Keep the agent running during the stream; do not start multiple copies.
+Incoming labels are held in a FIFO queue and printed one at a time. If the worker exits while
+handling a label, the agent restarts it and retries that label once before continuing the queue.
+
+During one agent session, pick numbers are tracked separately for each leading letter. If an
+older number arrives after a newer one (for example, `A 15` after `A 31`), the printed pick code
+becomes `A 15 (fixed)` so staff can verify placement before attaching it.
 
 With `PRINT_AGENT_DRY_RUN=true`, the agent only writes label HTML files to your temp folder. After confirming the label looks right, set:
 
