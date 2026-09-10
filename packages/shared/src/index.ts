@@ -29,6 +29,7 @@ export const labelPrintJobSchema = z.object({
   id: z.string().min(1),
   storeId: z.string().min(1),
   shopId: z.string().min(1),
+  warehouseId: z.string().min(1),
   orderId: z.string().min(1),
   skuName: z.string().min(1),
   productName: z.string().min(1),

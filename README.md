@@ -118,7 +118,7 @@ LABEL_PRINT_WAREHOUSE_ID=7581531451641317175
 LABEL_PRINT_SHOP_ID_2=7495180900215261343
 LABEL_PRINT_WAREHOUSE_ID_2=7263214411597498155
 LABEL_PRINT_SHOP_ID_3=7495210574874380572
-LABEL_PRINT_WAREHOUSE_ID_3=7581531451641317175
+LABEL_PRINT_WAREHOUSE_ID_3=7499485115637696302
 PRINT_AGENT_SERVER_URL=https://tiktok-shop-live-alert-server.onrender.com
 PRINT_AGENT_TOKEN=crossingtcg-overlay-token
 PRINT_AGENT_DRY_RUN=true
@@ -129,6 +129,16 @@ PRINT_AGENT_DRY_RUN=true
 ```bash
 pnpm print-agent
 ```
+
+To select one active warehouse without changing Render each day, use one of these commands:
+
+```bash
+pnpm print-agent:warehouse-758 # warehouse 7581531451641317175
+pnpm print-agent:warehouse-749 # warehouse 7499485115637696302
+```
+
+Configure both shop/warehouse pairs on Render once. The selected local agent ignores print jobs
+for the other warehouse. Stop the running agent before switching warehouses.
 
 The agent starts one persistent hidden PowerShell print worker and reuses it for every label.
 Keep the agent running during the stream; do not start multiple copies.
@@ -153,7 +163,7 @@ different warehouse identifier, the label is skipped.
 ```text
 7495210574874380572 / 7581531451641317175
 7495180900215261343 / 7263214411597498155
-7495210574874380572 / 7581531451641317175
+7495210574874380572 / 7499485115637696302
 ```
 
 The label contains the full order id, buyer nickname, product name, and a large `#sku_name` line.

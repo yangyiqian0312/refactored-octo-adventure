@@ -14,6 +14,7 @@ describe("renderRolloLabelHtml", () => {
       id: "print_1",
       storeId: "store2",
       shopId: "7495210574874380572",
+      warehouseId: "7499485115637696302",
       orderId: "577387538643456175",
       skuName: "487",
       productName: "A $1 START POKEMON/OP/TCG",

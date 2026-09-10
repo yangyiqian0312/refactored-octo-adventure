@@ -593,6 +593,7 @@ function emitLabelPrintJobIfNeeded({
     id: crypto.randomUUID(),
     storeId: storeConfig.id,
     shopId: matchingRule.shopId,
+    warehouseId: matchingRule.warehouseId,
     orderId: alert.orderId,
     skuName: printFields.skuName,
     productName: printFields.productName,
@@ -607,6 +608,7 @@ function emitLabelPrintJobIfNeeded({
     jobId: job.id,
     storeId: job.storeId,
     shopId: job.shopId,
+    warehouseId: job.warehouseId,
     orderId: job.orderId
   });
 }

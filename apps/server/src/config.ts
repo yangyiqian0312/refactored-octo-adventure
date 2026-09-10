@@ -89,8 +89,8 @@ function buildLabelPrintRules(env: NodeJS.ProcessEnv): LabelPrintRule[] {
       warehouseId: env.LABEL_PRINT_WAREHOUSE_ID_2 || "7263214411597498155"
     },
     {
-      shopId: env.LABEL_PRINT_SHOP_ID_3,
-      warehouseId: env.LABEL_PRINT_WAREHOUSE_ID_3
+      shopId: env.LABEL_PRINT_SHOP_ID_3 || "7495210574874380572",
+      warehouseId: env.LABEL_PRINT_WAREHOUSE_ID_3 || "7499485115637696302"
     }
   ];
 

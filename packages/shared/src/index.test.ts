@@ -54,6 +54,7 @@ describe("LabelPrintJob schema", () => {
       id: "print_123",
       storeId: "store2",
       shopId: "7495210574874380572",
+      warehouseId: "7499485115637696302",
       orderId: "577387538643456175",
       skuName: "ME03 Perfect Order",
       productName: "Pokemon Booster Pack",
@@ -64,6 +65,7 @@ describe("LabelPrintJob schema", () => {
     });
 
     expect(job.shopId).toBe("7495210574874380572");
+    expect(job.warehouseId).toBe("7499485115637696302");
     expect(job.productPaidAmount).toBe(30);
   });
 });

@@ -18,6 +18,10 @@ import { PickSequenceTracker } from "./pickSequence.js";
 
 const serverUrl = process.env.PRINT_AGENT_SERVER_URL ?? "https://tiktok-shop-live-alert-server.onrender.com";
 const token = process.env.PRINT_AGENT_TOKEN ?? process.env.OVERLAY_ALLOWED_TOKEN ?? "otaku-overlay-token";
+const warehouseArgument = process.argv.find((argument) => argument.startsWith("--warehouse="));
+const selectedWarehouseId = warehouseArgument?.slice("--warehouse=".length)
+  || process.env.PRINT_AGENT_WAREHOUSE_ID
+  || undefined;
 const dryRun = process.env.PRINT_AGENT_DRY_RUN === "true";
 const writePreview = dryRun || process.env.PRINT_AGENT_WRITE_PREVIEW === "true";
 const outputDir = process.env.PRINT_AGENT_OUTPUT_DIR ?? path.join(tmpdir(), "live-alert-labels");
@@ -36,12 +40,13 @@ process.once("SIGTERM", () => printWorker?.stop());
 
 const socket = io(serverUrl, {
   auth: { token },
-  transports: ["websocket", "polling"]
+  transports: ["polling", "websocket"],
+  tryAllTransports: true
 });
 let printQueue = Promise.resolve();
 
 socket.on("connect", () => {
-  log("connected", { serverUrl, dryRun, writePreview });
+  log("connected", { serverUrl, dryRun, writePreview, selectedWarehouseId });
 });
 
 socket.on("connect_error", (error) => {
@@ -61,6 +66,16 @@ socket.on("label:print", (payload: unknown) => {
   }
 
   const job = parsed.data;
+
+  if (selectedWarehouseId && job.warehouseId !== selectedWarehouseId) {
+    log("label skipped for inactive warehouse", {
+      orderId: job.orderId,
+      warehouseId: job.warehouseId,
+      selectedWarehouseId
+    });
+    return;
+  }
+
   printQueue = printQueue
     .then(() => printLabel(job))
     .catch((error: unknown) => {

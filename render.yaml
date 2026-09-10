@@ -30,3 +30,7 @@ services:
         sync: false
       - key: TIKTOK_WEBHOOK_VERIFY_BYPASS
         value: "false"
+      - key: LABEL_PRINT_SHOP_ID_3
+        value: "7495210574874380572"
+      - key: LABEL_PRINT_WAREHOUSE_ID_3
+        value: "7499485115637696302"

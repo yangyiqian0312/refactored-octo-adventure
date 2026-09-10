@@ -11,7 +11,9 @@
     "test": "corepack pnpm -r test",
     "lint": "corepack pnpm -r lint",
     "typecheck": "corepack pnpm -r typecheck",
-    "print-agent": "corepack pnpm --filter @live-alerts/print-agent dev"
+    "print-agent": "corepack pnpm --filter @live-alerts/print-agent dev",
+    "print-agent:warehouse-758": "corepack pnpm --filter @live-alerts/shared build && corepack pnpm --filter @live-alerts/print-agent build && node apps/print-agent/dist/index.js --warehouse=7581531451641317175",
+    "print-agent:warehouse-749": "corepack pnpm --filter @live-alerts/shared build && corepack pnpm --filter @live-alerts/print-agent build && node apps/print-agent/dist/index.js --warehouse=7499485115637696302"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.1",
