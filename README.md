@@ -83,7 +83,7 @@ pnpm print-agent
 
 See `.env.example`.
 
-`TIKTOK_WEBHOOK_VERIFY_BYPASS=true` is intended only for local development. Production mode must configure `TIKTOK_WEBHOOK_SECRET`; otherwise the webhook verifier fails closed.
+`TIKTOK_WEBHOOK_VERIFY_BYPASS=true` is intended only for local development. Production mode uses `TIKTOK_APP_KEY` and `TIKTOK_APP_SECRET` to verify the signature in TikTok's `Authorization` header. `TIKTOK_WEBHOOK_SECRET` can optionally override the signing secret.
 
 ## Privacy
 
@@ -98,7 +98,7 @@ Do not display shipping address, phone, email, payment data, full legal name, fu
 
 ## Production TikTok TODOs
 
-The webhook route exists and is safe for local unsigned payloads only when bypass is enabled. The signature verifier is isolated in `apps/server/src/tiktok/webhookVerifier.ts`, but the exact production TikTok Shop signature algorithm still needs to be implemented from official TikTok Shop Partner API documentation before real deployment.
+The webhook route is safe for local unsigned payloads only when bypass is enabled. Production verification uses TikTok Shop's documented `HMAC-SHA256(app_key + raw_request_body, app_secret)` algorithm and a constant-time signature comparison.
 
 Order detail lookup is represented by `apps/server/src/tiktok/client.ts` and must be completed with official endpoint paths, request signing, headers, rate-limit behavior, and response schemas.
 

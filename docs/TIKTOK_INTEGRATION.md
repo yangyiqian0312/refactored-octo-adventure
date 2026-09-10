@@ -39,12 +39,9 @@ Current MVP behavior:
 
 Production verification is not claimed complete.
 
-`webhookVerifier.ts` currently has a dedicated placeholder verifier. If `TIKTOK_WEBHOOK_SECRET` is missing and local bypass is disabled, it fails closed.
-
-Before production:
-
-- replace the placeholder HMAC fallback with the exact official TikTok Shop Partner webhook verification algorithm
-- confirm the correct signature header names
+`webhookVerifier.ts` verifies the lowercase hexadecimal signature from TikTok's `Authorization`
+header using `HMAC-SHA256(app_key + raw_request_body, app_secret)`. It compares signatures in
+constant time and fails closed when the app key, signing secret, or signature is missing.
 - confirm canonical payload construction
 - add official schema examples to tests
 - keep the fail-closed behavior for missing or invalid configuration

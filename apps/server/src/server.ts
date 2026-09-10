@@ -328,7 +328,8 @@ export async function createApp(config: AppConfig): Promise<AppContext> {
   app.post("/webhooks/tiktok", async (request, reply) => {
     const rawBody = typeof request.body === "string" ? request.body : JSON.stringify(request.body ?? {});
     const verification = verifyTikTokWebhookSignature(rawBody, request.headers, {
-      secret: config.tiktokWebhookSecret,
+      appKey: config.tiktokAppKey,
+      secret: config.tiktokWebhookSecret ?? config.tiktokAppSecret,
       allowLocalBypass: config.tiktokWebhookVerifyBypass
     });
 

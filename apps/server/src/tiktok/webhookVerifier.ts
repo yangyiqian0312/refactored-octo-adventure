@@ -1,6 +1,7 @@
 import crypto from "node:crypto";
 
 export type WebhookVerifierOptions = {
+  appKey: string | undefined;
   secret: string | undefined;
   allowLocalBypass: boolean;
 };
@@ -14,26 +15,24 @@ export function verifyTikTokWebhookSignature(
   headers: Record<string, string | string[] | undefined>,
   options: WebhookVerifierOptions
 ): WebhookVerificationResult {
-  if (!options.secret) {
+  if (!options.appKey || !options.secret) {
     if (options.allowLocalBypass) {
       return { ok: true, mode: "local-bypass" };
     }
 
-    return { ok: false, reason: "TIKTOK_WEBHOOK_SECRET is required when bypass is disabled" };
+    return { ok: false, reason: "TikTok app key and app secret are required when bypass is disabled" };
   }
 
-  const signature = firstHeader(headers["x-tiktok-signature"] ?? headers["x-tts-signature"]);
+  const signature = firstHeader(headers.authorization);
 
   if (!signature) {
     return { ok: false, reason: "missing TikTok webhook signature header" };
   }
 
-  // TODO: Replace this fallback HMAC with the exact TikTok Shop Partner webhook
-  // verification algorithm from official documentation before production use.
-  const expected = crypto.createHmac("sha256", options.secret).update(rawBody).digest("hex");
-  const normalizedSignature = signature.replace(/^sha256=/i, "");
+  const signatureBaseString = `${options.appKey}${rawBody}`;
+  const expected = crypto.createHmac("sha256", options.secret).update(signatureBaseString).digest("hex");
 
-  if (!timingSafeEqualHex(expected, normalizedSignature)) {
+  if (!timingSafeEqualHex(expected, signature)) {
     return { ok: false, reason: "invalid TikTok webhook signature" };
   }
 
