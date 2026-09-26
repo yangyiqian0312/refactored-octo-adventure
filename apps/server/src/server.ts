@@ -1,6 +1,7 @@
 import cors from "@fastify/cors";
 import {
   calculateOrderTier,
+  printUsername,
   labelPrintJobSchema,
   maskBuyerDisplayName,
   orderAlertSchema,
@@ -15,6 +16,7 @@ import { z, ZodError } from "zod";
 import type { AppConfig, LabelPrintRule, TikTokStoreConfig } from "./config.js";
 import { findMatchingLabelPrintRule } from "./labelPrintRules.js";
 import { logger } from "./logger.js";
+import { paymentHoldStatus, webhookUpdateTime } from "./paymentHolds.js";
 import { InMemoryOrderStore } from "./store.js";
 import {
   buildTikTokDedupeKey,
@@ -85,6 +87,12 @@ export async function createApp(config: AppConfig): Promise<AppContext> {
       return;
     }
 
+    const expectedShopId = socket.handshake.auth.shopId;
+    if (expectedShopId !== undefined && expectedShopId !== storeConfig.tiktokShopId) {
+      next(new Error("shop identity mismatch"));
+      return;
+    }
+
     socket.data.storeId = storeConfig.id;
     next();
   });
@@ -97,9 +105,30 @@ export async function createApp(config: AppConfig): Promise<AppContext> {
     logger.info("overlay connected", { socketId: socket.id, storeId });
     socket.emit("recent:alerts", store.getRecentAlerts());
     socket.emit("order:queue", store.getPendingOrders());
+    const storeConfig = config.stores.find((candidate) => candidate.id === storeId);
+    socket.emit("print:context", {
+      shopId: storeConfig?.tiktokShopId,
+      storeId,
+      warehouses: config.labelPrintRules
+        .filter((rule) => rule.shopId === storeConfig?.tiktokShopId)
+        .map((rule) => ({ id: rule.warehouseId, name: `仓库 ${rule.warehouseId}` })),
+      paymentHolds: store.paymentHolds.list()
+    });
   });
 
   app.get("/health", async () => ({ ok: true }));
+
+  app.get("/api/print-identity", async (request, reply) => {
+    const storeConfig = findStoreForDebugRequest(request.headers.authorization, config);
+    if (!storeConfig) return reply.status(401).send({ ok: false });
+    return {
+      ok: true,
+      storeId: storeConfig.id,
+      shopId: storeConfig.tiktokShopId ?? "",
+      warehouses: config.labelPrintRules.filter((rule) => rule.shopId === storeConfig.tiktokShopId)
+        .map((rule) => ({ id: rule.warehouseId, name: `仓库 ${rule.warehouseId}` }))
+    };
+  });
 
   app.post("/api/test-order", async (request, reply) => {
     try {
@@ -769,6 +798,29 @@ async function processTikTokWebhookEvent({
   labelPrintRules: LabelPrintRule[];
 }): Promise<void> {
   try {
+    if (orderId && orderStatus) {
+      const timestamp = webhookUpdateTime(payload);
+      const changed = store.paymentHolds.update(orderId, orderStatus, timestamp);
+      if (changed) {
+        io.to(roomForStore(storeConfig.id)).emit("print:payment-holds", store.paymentHolds.list());
+      }
+      if (changed && paymentHoldStatus(orderStatus)) {
+        try {
+          const details = await tiktokOrderClient.getOrderDetails(orderId);
+          if (details) {
+            store.paymentHolds.enrich(orderId, timestamp, {
+              warehouseId: details.warehouseId,
+              productTitle: details.productTitle,
+              skuName: details.skuName,
+              buyerDisplayName: printUsername(details.buyerNickname)
+            });
+            io.to(roomForStore(storeConfig.id)).emit("print:payment-holds", store.paymentHolds.list());
+          }
+        } catch (error) {
+          logger.warn("payment hold details unavailable", { errorName: error instanceof Error ? error.name : "UnknownError" });
+        }
+      }
+    }
     const shouldCreateAlert = shouldCreateAlertForTikTokStatus(orderStatus);
 
     if (!shouldCreateAlert) {

@@ -1,4 +1,5 @@
 import type { OrderAlert, OrderQueueItem } from "@live-alerts/shared";
+import { PaymentHoldStore } from "./paymentHolds.js";
 
 export type RawWebhookEvent = {
   eventId: string;
@@ -8,6 +9,7 @@ export type RawWebhookEvent = {
 };
 
 export class InMemoryOrderStore {
+  readonly paymentHolds = new PaymentHoldStore();
   private readonly alerts: OrderAlert[] = [];
   private readonly rawWebhookEvents: RawWebhookEvent[] = [];
   private readonly pendingOrders = new Map<string, OrderQueueItem>();

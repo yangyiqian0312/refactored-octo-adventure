@@ -1,4 +1,5 @@
 import { z } from "zod";
+export * from "./printConsole.js";
 
 export const orderAlertTierSchema = z.enum(["normal", "large", "mega"]);
 

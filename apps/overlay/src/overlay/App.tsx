@@ -3,10 +3,14 @@ import type { CSSProperties } from "react";
 import { useEffect, useMemo, useState } from "react";
 import { enqueueAlert, popNextAlert } from "./alertQueue.js";
 import { useOrderSocket } from "./useOrderSocket.js";
+import { PrintConsole } from "../print-console/PrintConsole.js";
 
 const DISPLAY_MS = 4300;
 
 export function App() {
+  if (window.location.pathname === "/print-control") {
+    return <PrintConsole />;
+  }
   if (window.location.pathname === "/control") {
     return <QueueControlPage />;
   }

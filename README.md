@@ -115,8 +115,8 @@ Render cannot directly access a local Rollo printer. Run the local print agent o
 ```bash
 LABEL_PRINT_SHOP_ID=7495210574874380572
 LABEL_PRINT_WAREHOUSE_ID=7581531451641317175
-LABEL_PRINT_SHOP_ID_2=7495180900215261343
-LABEL_PRINT_WAREHOUSE_ID_2=7263214411597498155
+LABEL_PRINT_SHOP_ID_2=7495169240868424019
+LABEL_PRINT_WAREHOUSE_ID_2=7499833317727225642
 LABEL_PRINT_SHOP_ID_3=7495210574874380572
 LABEL_PRINT_WAREHOUSE_ID_3=7499485115637696302
 PRINT_AGENT_SERVER_URL=https://tiktok-shop-live-alert-server.onrender.com
@@ -130,20 +130,25 @@ PRINT_AGENT_DRY_RUN=true
 pnpm print-agent
 ```
 
-To select one active warehouse without changing Render each day, use one of these commands:
+For a visual warehouse selector, current print number, print queue/history and payment holds, run
+`pnpm print-console` and open <http://127.0.0.1:3002/print-control>.
+See [the print console guide](docs/print-console.md) for configuration and testing.
+Stop the old agent before starting the console. Configure each shop's token, actual shop ID, and warehouses as described in the guide. The selector switches the authenticated shop connection as well as the warehouse; printing waits for identity verification. The last selection is saved for the next startup.
+
+To preselect one active warehouse without changing Render each day, use one of these commands:
 
 ```bash
 pnpm print-agent:warehouse-758 # warehouse 7581531451641317175
 pnpm print-agent:warehouse-749 # warehouse 7499485115637696302
 ```
 
-Configure both shop/warehouse pairs on Render once. The selected local agent ignores print jobs
-for the other warehouse. Stop the running agent before switching warehouses.
+Configure both shop/warehouse pairs on Render once. The local agent keeps jobs for other
+warehouses waiting in separate shop session queues. Use the shop/warehouse dropdown to switch without restarting. Orders emitted while a shop is disconnected are not replayed automatically.
 
 The agent starts one persistent hidden PowerShell print worker and reuses it for every label.
 Keep the agent running during the stream; do not start multiple copies.
-Incoming labels are held in a FIFO queue and printed one at a time. If the worker exits while
-handling a label, the agent restarts it and retries that label once before continuing the queue.
+Incoming labels are held in a FIFO queue per selected warehouse and printed one at a time.
+Uncertain print failures pause the queue for review rather than automatically retrying a potentially printed label.
 
 During one agent session, pick numbers are tracked separately for each leading letter. If an
 older number arrives after a newer one (for example, `A 15` after `A 31`), the printed pick code
@@ -162,7 +167,7 @@ different warehouse identifier, the label is skipped.
 
 ```text
 7495210574874380572 / 7581531451641317175
-7495180900215261343 / 7263214411597498155
+7495169240868424019 / 7499833317727225642
 7495210574874380572 / 7499485115637696302
 ```
 

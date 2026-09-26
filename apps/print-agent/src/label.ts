@@ -1,6 +1,6 @@
 import type { LabelPrintJob } from "@live-alerts/shared";
 
-export function renderRolloLabelHtml(job: LabelPrintJob, qrImagePath?: string): string {
+export function renderRolloLabelHtml(job: LabelPrintJob, _qrImagePath?: string): string {
   return `<!doctype html>
 <html>
 <head>
